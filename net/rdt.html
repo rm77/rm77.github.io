@@ -1,0 +1,1091 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Reliable data transfer: rdt1.0 to rdt3.0</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #ffffff; --fg: #000000; --muted: #555555; --faint: #9a9a9a; --rule: #d6d6d6; --wash: #f2f2f2;
+  --sans: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #000000; --fg: #ffffff; --muted: #b5b5b5; --faint: #707070; --rule: #333333; --wash: #1a1a1a; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --bg: #000000; --fg: #ffffff; --muted: #b5b5b5; --faint: #707070; --rule: #333333; --wash: #1a1a1a; color-scheme: dark; }
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+*, *::before, *::after { box-sizing: inherit; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 var(--sans); }
+.wrap { max-width: 1560px; margin: 0 auto; padding: 20px 20px 40px; }
+h1 { font-size: 26px; line-height: 1.2; font-weight: 600; margin: 0 0 4px; letter-spacing: -0.01em; }
+.lead { margin: 0 0 18px; color: var(--muted); max-width: 72ch; }
+h2 { font-size: 15px; font-weight: 600; margin: 0 0 8px; }
+button, select, input { font: inherit; color: var(--fg); background: var(--bg); }
+button { border: 1px solid var(--fg); border-radius: 3px; padding: 5px 12px; cursor: pointer; }
+button:hover { background: var(--wash); }
+button[aria-pressed="true"], button.on { background: var(--fg); color: var(--bg); }
+button:disabled { opacity: .4; cursor: default; }
+:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+select, input[type=number] { border: 1px solid var(--fg); border-radius: 3px; padding: 4px 6px; }
+input[type=number] { width: 4.2em; }
+input[type=range] { accent-color: var(--fg); width: 110px; vertical-align: middle; }
+label { white-space: nowrap; }
+
+.protos { display: flex; gap: 0; margin-bottom: 12px; flex-wrap: wrap; }
+.protos button { border-radius: 0; margin-left: -1px; font-family: var(--mono); font-size: 15px; padding: 7px 16px; }
+.protos button:first-child { border-radius: 3px 0 0 3px; margin-left: 0; }
+.protos button:last-child { border-radius: 0 3px 3px 0; }
+.scenario { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; align-items: baseline; margin-bottom: 14px; }
+.scenario p { margin: 0; max-width: 90ch; }
+#channel { color: var(--muted); grid-column: 2; }
+.bar { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; padding: 10px 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); margin-bottom: 16px; }
+.group { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.seg { display: inline-flex; }
+.seg button { border-radius: 0; margin-left: -1px; padding: 5px 10px; }
+.seg button:first-child { border-radius: 3px 0 0 3px; margin-left: 0; }
+.seg button:last-child { border-radius: 0 3px 3px 0; }
+.hint { color: var(--muted); font-size: 13px; }
+.dim { opacity: .4; }
+
+.stage { display: grid; grid-template-columns: minmax(290px, 340px) minmax(0, 1fr) minmax(290px, 340px); gap: 20px; align-items: start; }
+.fsm svg { width: 100%; height: auto; display: block; }
+.fsm .now { font-size: 13px; color: var(--muted); margin: 0 0 4px; min-height: 1.5em; }
+.fsm .now b { color: var(--fg); font-weight: 600; }
+.fsm .e { stroke: var(--fg); stroke-width: 1.4; fill: var(--bg); }
+.fsm .e.on { fill: var(--fg); stroke-width: 2; }
+.fsm .st { font: 12px var(--sans); fill: var(--fg); }
+.fsm .st.on { fill: var(--bg); font-weight: 600; }
+.fsm .tr { fill: none; stroke: var(--faint); stroke-width: 1.3; }
+.fsm .tr.on { stroke: var(--fg); stroke-width: 2.6; }
+.fsm .bc { fill: var(--bg); stroke: var(--fg); stroke-width: 1.2; }
+.fsm .bc.on { fill: var(--fg); }
+.fsm .bt { font: 600 10.5px var(--mono); fill: var(--fg); }
+.fsm .bt.on { fill: var(--bg); }
+.fsm .mn { fill: var(--faint); } .fsm .ma, .fsm .idot { fill: var(--fg); }
+.fsm .init { stroke: var(--fg); stroke-width: 1.3; }
+table.trans { width: 100%; border-collapse: collapse; font: 11.5px/1.35 var(--mono); margin-top: 6px; }
+table.trans td { border-top: 1px solid var(--rule); padding: 4px 6px; vertical-align: top; }
+table.trans td.n { width: 2em; text-align: right; font-weight: 600; }
+table.trans .ev { white-space: pre-wrap; }
+table.trans .act { white-space: pre-wrap; border-top: 1px solid currentColor; margin-top: 3px; padding-top: 3px; opacity: .85; }
+table.trans tr.hit td { background: var(--fg); color: var(--bg); }
+
+.timeline { position: relative; min-width: 0; }
+.narr { border: 1px solid var(--fg); padding: 10px 12px; min-height: 5.2em; margin-bottom: 8px; }
+.narr .status { font-size: 13px; color: var(--muted); display: flex; justify-content: space-between; gap: 12px; margin-bottom: 2px; }
+.narr .status b { color: var(--fg); }
+.narr p { margin: 0; font-size: 16px; line-height: 1.45; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12.5px; color: var(--muted); margin: 0 0 6px; }
+.legend svg { vertical-align: middle; margin-right: 4px; }
+.scroll { height: min(64vh, 700px); min-height: 380px; overflow-y: auto; overflow-x: auto; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+#seq { display: block; width: 100%; min-width: 480px; height: auto; }
+#seq text { font-family: var(--sans); font-size: 12px; fill: var(--fg); }
+#seq .lane { stroke: var(--fg); stroke-width: 1.5; }
+#seq .grid { stroke: var(--rule); stroke-width: 1; }
+#seq .tick { fill: var(--faint); font-size: 10.5px; }
+#seq .pk { stroke: var(--fg); stroke-width: 1.6; fill: none; }
+#seq .pk.bad { stroke-dasharray: 7 4; }
+#seq .fut { stroke: var(--faint); stroke-width: 1.3; stroke-dasharray: 1.5 4; fill: none; }
+#seq .pl { font-family: var(--mono); font-size: 11.5px; paint-order: stroke; stroke: var(--bg); stroke-width: 4px; stroke-linejoin: round; }
+#seq .pl.bad { font-weight: 600; }
+#seq .hit { stroke: transparent; stroke-width: 18; cursor: crosshair; pointer-events: stroke; }
+#seq .dot { fill: var(--fg); }
+#seq .x { stroke: var(--fg); stroke-width: 2.2; }
+#seq .an { font-size: 11.5px; paint-order: stroke; stroke: var(--bg); stroke-width: 3px; }
+#seq .an.mark { font-weight: 600; }
+#seq .timer { stroke: var(--fg); stroke-width: 3.5; }
+#seq .timer.exp { stroke-dasharray: 3 2; }
+#seq .nowl { stroke: var(--fg); stroke-width: 1; stroke-dasharray: 2 3; }
+#seq .nowt { font-size: 10.5px; fill: var(--muted); }
+#seq .hdr { font-weight: 600; font-size: 13px; }
+#seq .ah { fill: var(--fg); }
+
+.modal { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); width: min(460px, 92%); background: var(--bg); border: 2px solid var(--fg); padding: 14px 16px; z-index: 5; }
+.modal h3 { margin: 0 0 6px; font-size: 16px; }
+.modal p { margin: 0 0 12px; }
+.modal .row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+.lower { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; margin-top: 22px; }
+.deliv { display: flex; flex-wrap: wrap; gap: 8px; min-height: 64px; align-items: flex-start; }
+.box { width: 46px; text-align: center; }
+.box .l { border: 1.5px solid var(--fg); height: 42px; display: grid; place-items: center; font: 600 20px var(--mono); }
+.box.dup .l { background: var(--fg); color: var(--bg); }
+.box.corrupt .l { border-style: dashed; text-decoration: line-through; }
+.box.missing .l { border: 1.5px dashed var(--faint); color: var(--faint); }
+.box .c { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.summary { margin: 8px 0 0; color: var(--muted); font-size: 14px; }
+.empty { color: var(--muted); font-size: 14px; margin: 0; }
+.log { max-height: 220px; overflow-y: auto; margin: 0; padding: 0; list-style: none; font-size: 13.5px; border-top: 1px solid var(--rule); }
+.log li { display: grid; grid-template-columns: 4.2em 1fr; gap: 8px; padding: 4px 0; border-bottom: 1px solid var(--rule); }
+.log li span { font-family: var(--mono); font-size: 12px; color: var(--muted); padding-top: 1px; }
+footer { margin-top: 28px; font-size: 12.5px; color: var(--muted); max-width: 90ch; }
+kbd { font-family: var(--mono); font-size: 12px; border: 1px solid var(--rule); border-radius: 3px; padding: 0 4px; }
+
+@media (max-width: 1180px) {
+  .stage { grid-template-columns: 1fr 1fr; grid-template-areas: "tl tl" "s r"; }
+  .timeline { grid-area: tl; } #fsmS { grid-area: s; } #fsmR { grid-area: r; }
+}
+@media (max-width: 720px) {
+  .wrap { padding: 14px 12px 32px; }
+  h1 { font-size: 21px; }
+  .stage { grid-template-columns: 1fr; grid-template-areas: "tl" "s" "r"; }
+  .lower { grid-template-columns: 1fr; }
+  .scenario { grid-template-columns: 1fr; }
+  #channel { grid-column: 1; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Reliable data transfer, rdt1.0 to rdt3.0</h1>
+  <p class="lead">Each version adds one mechanism to survive one more channel fault. Run a scenario, or damage packets yourself, and follow how the sender and receiver state machines respond.</p>
+
+  <div class="protos" role="group" aria-label="Protocol version" id="protos"></div>
+  <div class="scenario">
+    <label for="scen"><b>Scenario</b></label>
+    <div><select id="scen"></select></div>
+    <span></span><p id="scenDesc"></p>
+    <p id="channel"></p>
+  </div>
+
+  <div class="bar">
+    <div class="group">
+      <button id="play" class="on" style="min-width:5.5em">Play</button>
+      <button id="step">Step</button>
+      <button id="reset">Reset</button>
+      <label>Speed <input type="range" id="speed" min="0.2" max="2.5" step="0.1" value="0.7"></label>
+    </div>
+    <div class="group">
+      <span>Click a packet in flight to</span>
+      <div class="seg" role="group" aria-label="Fault to apply" id="tool">
+        <button data-k="corrupt" aria-pressed="true">flip bits</button>
+        <button data-k="lose" aria-pressed="false">lose it</button>
+        <button data-k="delay" aria-pressed="false">delay it</button>
+      </div>
+    </div>
+    <div class="group" id="randGroup">
+      <label>Random bit errors <input type="number" id="pc" min="0" max="60" step="5" value="0">%</label>
+      <label>Random loss <input type="number" id="pl" min="0" max="60" step="5" value="0">%</label>
+      <label>Seed <input type="number" id="seed" min="1" max="9999" value="7"></label>
+    </div>
+    <div class="group">
+      <label id="toWrap">Timeout <input type="range" id="to" min="1.2" max="5" step="0.1" value="2.5"> <span id="toVal">2.5</span> (RTT 2.0)</label>
+      <label>Messages <select id="nmsg"><option>3</option><option>4</option><option selected>5</option><option>6</option><option>8</option></select></label>
+    </div>
+  </div>
+
+  <div class="stage">
+    <section class="fsm" id="fsmS" aria-label="Sender state machine">
+      <h2>Sender</h2>
+      <p class="now"></p>
+      <div class="svgbox"></div>
+      <table class="trans"><tbody></tbody></table>
+    </section>
+
+    <section class="timeline" aria-label="Sequence diagram">
+      <div class="narr">
+        <div class="status"><span id="status"></span><span id="clock"></span></div>
+        <p id="narr" aria-live="polite"></p>
+      </div>
+      <div class="legend">
+        <span><svg width="30" height="8"><line x1="0" y1="4" x2="30" y2="4" stroke="currentColor" stroke-width="1.6"/></svg>packet</span>
+        <span><svg width="30" height="8"><line x1="0" y1="4" x2="30" y2="4" stroke="currentColor" stroke-width="1.6" stroke-dasharray="7 4"/></svg>bits flipped</span>
+        <span><svg width="30" height="8"><line x1="0" y1="4" x2="30" y2="4" stroke="currentColor" stroke-width="1.3" stroke-dasharray="1.5 4"/></svg>still in flight</span>
+        <span><svg width="12" height="12"><path d="M2 2L10 10M10 2L2 10" stroke="currentColor" stroke-width="2"/></svg>lost</span>
+        <span><svg width="8" height="22" style="vertical-align:-6px"><line x1="4" y1="1" x2="4" y2="21" stroke="currentColor" stroke-width="3.5"/></svg>timer running</span>
+      </div>
+      <div class="scroll" id="scroll"><svg id="seq" xmlns="http://www.w3.org/2000/svg"></svg></div>
+      <div class="modal" id="modal" hidden role="dialog" aria-labelledby="mh">
+        <h3 id="mh">Garbled feedback</h3>
+        <p>The sender received an ACK or a NAK with bits flipped. It cannot tell which. rdt2.0 has no rule for this. What should it do?</p>
+        <div class="row">
+          <button id="dResend">Retransmit (assume NAK)</button>
+          <button id="dNext">Send next message (assume ACK)</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="fsm" id="fsmR" aria-label="Receiver state machine">
+      <h2>Receiver</h2>
+      <p class="now"></p>
+      <div class="svgbox"></div>
+      <table class="trans"><tbody></tbody></table>
+    </section>
+  </div>
+
+  <div class="lower">
+    <section>
+      <h2>Delivered to the receiving application</h2>
+      <div class="deliv" id="deliv"></div>
+      <p class="summary" id="summary"></p>
+    </section>
+    <section>
+      <h2>Event log</h2>
+      <ol class="log" id="log"></ol>
+    </section>
+  </div>
+
+  <footer>
+    Keys: <kbd>Space</kbd> play or pause, <kbd>→</kbd> step, <kbd>R</kbd> reset. One time unit is the one-way propagation delay, so a round trip takes 2.0.
+    State machines follow Kurose &amp; Ross, <i>Computer Networking: A Top-Down Approach</i>, Chapter 3.
+  </footer>
+</div>
+<script>
+const RDT = (() => {
+  const D = 1.0, GAP = 0.35, GAP10 = 1.0, DELAY_EXTRA = 1.3;
+  const L = 'ABCDEFGHIJ';
+
+  function rng32(a) {
+    return function () {
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      let t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  // ---------- FSM specifications (after Kurose & Ross, Ch. 3) ----------
+  function square(ackLab, trans) {
+    return {
+      init: 'C0', initAngle: 250,
+      states: [
+        { id: 'C0', x: 95, y: 85, lab: ['Wait for call 0', 'from above'] },
+        { id: 'W0', x: 285, y: 85, lab: ackLab(0) },
+        { id: 'C1', x: 285, y: 215, lab: ['Wait for call 1', 'from above'] },
+        { id: 'W1', x: 95, y: 215, lab: ackLab(1) },
+      ],
+      trans,
+    };
+  }
+  const recv22 = {
+    init: 'R0', initAngle: 330,
+    initAct: 'sndpkt = make_pkt(ACK, 1, chksum)',
+    states: [
+      { id: 'R0', x: 105, y: 150, lab: ['Wait for 0', 'from below'] },
+      { id: 'R1', x: 275, y: 150, lab: ['Wait for 1', 'from below'] },
+    ],
+    trans: [
+      { id: 1, from: 'R0', to: 'R1', ev: 'rdt_rcv(rcvpkt) && notcorrupt(rcvpkt)\n  && has_seq0(rcvpkt)', act: 'extract(rcvpkt, data)\ndeliver_data(data)\nsndpkt = make_pkt(ACK, 0, chksum)\nudt_send(sndpkt)' },
+      { id: 2, from: 'R0', to: 'R0', loop: 230, ev: 'rdt_rcv(rcvpkt) &&\n  (corrupt(rcvpkt) || has_seq1(rcvpkt))', act: 'udt_send(sndpkt)' },
+      { id: 3, from: 'R1', to: 'R0', ev: 'rdt_rcv(rcvpkt) && notcorrupt(rcvpkt)\n  && has_seq1(rcvpkt)', act: 'extract(rcvpkt, data)\ndeliver_data(data)\nsndpkt = make_pkt(ACK, 1, chksum)\nudt_send(sndpkt)' },
+      { id: 4, from: 'R1', to: 'R1', loop: 130, ev: 'rdt_rcv(rcvpkt) &&\n  (corrupt(rcvpkt) || has_seq0(rcvpkt))', act: 'udt_send(sndpkt)' },
+    ],
+  };
+
+  const SPEC = {
+    '1.0': {
+      channel: 'Channel model: perfectly reliable. No bit errors, no loss.',
+      sender: {
+        init: 'C', initAngle: 270,
+        states: [{ id: 'C', x: 190, y: 150, lab: ['Wait for call', 'from above'] }],
+        trans: [{ id: 1, from: 'C', to: 'C', loop: 90, ev: 'rdt_send(data)', act: 'packet = make_pkt(data)\nudt_send(packet)' }],
+      },
+      receiver: {
+        init: 'R', initAngle: 270,
+        states: [{ id: 'R', x: 190, y: 150, lab: ['Wait for call', 'from below'] }],
+        trans: [{ id: 1, from: 'R', to: 'R', loop: 90, ev: 'rdt_rcv(packet)', act: 'extract(packet, data)\ndeliver_data(data)' }],
+      },
+    },
+    '2.0': {
+      channel: 'Channel model: may flip bits. Never loses packets.',
+      sender: {
+        init: 'C', initAngle: 270,
+        states: [
+          { id: 'C', x: 190, y: 80, lab: ['Wait for call', 'from above'] },
+          { id: 'W', x: 190, y: 215, lab: ['Wait for', 'ACK or NAK'] },
+        ],
+        trans: [
+          { id: 1, from: 'C', to: 'W', ev: 'rdt_send(data)', act: 'sndpkt = make_pkt(data, checksum)\nudt_send(sndpkt)' },
+          { id: 2, from: 'W', to: 'W', loop: 180, ev: 'rdt_rcv(rcvpkt) && isNAK(rcvpkt)', act: 'udt_send(sndpkt)' },
+          { id: 3, from: 'W', to: 'C', ev: 'rdt_rcv(rcvpkt) && isACK(rcvpkt)', act: 'Λ' },
+        ],
+      },
+      receiver: {
+        init: 'R', initAngle: 0,
+        states: [{ id: 'R', x: 190, y: 155, lab: ['Wait for call', 'from below'] }],
+        trans: [
+          { id: 1, from: 'R', to: 'R', loop: 270, ev: 'rdt_rcv(rcvpkt) && corrupt(rcvpkt)', act: 'udt_send(NAK)' },
+          { id: 2, from: 'R', to: 'R', loop: 90, ev: 'rdt_rcv(rcvpkt) && notcorrupt(rcvpkt)', act: 'extract(rcvpkt, data)\ndeliver_data(data)\nudt_send(ACK)' },
+        ],
+      },
+    },
+    '2.1': {
+      channel: 'Channel model: may flip bits in data and in ACK/NAK. Never loses packets.',
+      sender: square(n => ['Wait for ACK', 'or NAK ' + n], [
+        { id: 1, from: 'C0', to: 'W0', ev: 'rdt_send(data)', act: 'sndpkt = make_pkt(0, data, checksum)\nudt_send(sndpkt)' },
+        { id: 2, from: 'W0', to: 'W0', loop: 30, ev: 'rdt_rcv(rcvpkt) &&\n  (corrupt(rcvpkt) || isNAK(rcvpkt))', act: 'udt_send(sndpkt)' },
+        { id: 3, from: 'W0', to: 'C1', ev: 'rdt_rcv(rcvpkt) && notcorrupt(rcvpkt)\n  && isACK(rcvpkt)', act: 'Λ' },
+        { id: 4, from: 'C1', to: 'W1', ev: 'rdt_send(data)', act: 'sndpkt = make_pkt(1, data, checksum)\nudt_send(sndpkt)' },
+        { id: 5, from: 'W1', to: 'W1', loop: 210, ev: 'rdt_rcv(rcvpkt) &&\n  (corrupt(rcvpkt) || isNAK(rcvpkt))', act: 'udt_send(sndpkt)' },
+        { id: 6, from: 'W1', to: 'C0', ev: 'rdt_rcv(rcvpkt) && notcorrupt(rcvpkt)\n  && isACK(rcvpkt)', act: 'Λ' },
+      ]),
+      receiver: {
+        init: 'R0', initAngle: 270,
+        states: [
+          { id: 'R0', x: 100, y: 150, lab: ['Wait for 0', 'from below'] },
+          { id: 'R1', x: 280, y: 150, lab: ['Wait for 1', 'from below'] },
+        ],
+        trans: [
+          { id: 1, from: 'R0', to: 'R1', ev: 'rdt_rcv(rcvpkt) && notcorrupt(rcvpkt)\n  && has_seq0(rcvpkt)', act: 'extract(rcvpkt, data)\ndeliver_data(data)\nsndpkt = make_pkt(ACK, chksum)\nudt_send(sndpkt)' },
+          { id: 2, from: 'R0', to: 'R0', loop: 220, ev: 'rdt_rcv(rcvpkt) && corrupt(rcvpkt)', act: 'sndpkt = make_pkt(NAK, chksum)\nudt_send(sndpkt)' },
+          { id: 3, from: 'R0', to: 'R0', loop: 320, ev: 'rdt_rcv(rcvpkt) && notcorrupt(rcvpkt)\n  && has_seq1(rcvpkt)', act: 'sndpkt = make_pkt(ACK, chksum)\nudt_send(sndpkt)' },
+          { id: 4, from: 'R1', to: 'R0', ev: 'rdt_rcv(rcvpkt) && notcorrupt(rcvpkt)\n  && has_seq1(rcvpkt)', act: 'extract(rcvpkt, data)\ndeliver_data(data)\nsndpkt = make_pkt(ACK, chksum)\nudt_send(sndpkt)' },
+          { id: 5, from: 'R1', to: 'R1', loop: 140, ev: 'rdt_rcv(rcvpkt) && corrupt(rcvpkt)', act: 'sndpkt = make_pkt(NAK, chksum)\nudt_send(sndpkt)' },
+          { id: 6, from: 'R1', to: 'R1', loop: 40, ev: 'rdt_rcv(rcvpkt) && notcorrupt(rcvpkt)\n  && has_seq0(rcvpkt)', act: 'sndpkt = make_pkt(ACK, chksum)\nudt_send(sndpkt)' },
+        ],
+      },
+    },
+    '2.2': {
+      channel: 'Channel model: may flip bits in data and in ACKs. Never loses packets. No NAKs.',
+      sender: square(n => ['Wait for', 'ACK' + n], [
+        { id: 1, from: 'C0', to: 'W0', ev: 'rdt_send(data)', act: 'sndpkt = make_pkt(0, data, checksum)\nudt_send(sndpkt)' },
+        { id: 2, from: 'W0', to: 'W0', loop: 30, ev: 'rdt_rcv(rcvpkt) &&\n  (corrupt(rcvpkt) || isACK(rcvpkt, 1))', act: 'udt_send(sndpkt)' },
+        { id: 3, from: 'W0', to: 'C1', ev: 'rdt_rcv(rcvpkt) && notcorrupt(rcvpkt)\n  && isACK(rcvpkt, 0)', act: 'Λ' },
+        { id: 4, from: 'C1', to: 'W1', ev: 'rdt_send(data)', act: 'sndpkt = make_pkt(1, data, checksum)\nudt_send(sndpkt)' },
+        { id: 5, from: 'W1', to: 'W1', loop: 210, ev: 'rdt_rcv(rcvpkt) &&\n  (corrupt(rcvpkt) || isACK(rcvpkt, 0))', act: 'udt_send(sndpkt)' },
+        { id: 6, from: 'W1', to: 'C0', ev: 'rdt_rcv(rcvpkt) && notcorrupt(rcvpkt)\n  && isACK(rcvpkt, 1)', act: 'Λ' },
+      ]),
+      receiver: recv22,
+    },
+    '3.0': {
+      channel: 'Channel model: may flip bits and may lose packets, data and ACKs alike.',
+      sender: square(n => ['Wait for', 'ACK' + n], [
+        { id: 1, from: 'C0', to: 'W0', ev: 'rdt_send(data)', act: 'sndpkt = make_pkt(0, data, checksum)\nudt_send(sndpkt)\nstart_timer' },
+        { id: 2, from: 'W0', to: 'W0', loop: 50, ev: 'rdt_rcv(rcvpkt) &&\n  (corrupt(rcvpkt) || isACK(rcvpkt, 1))', act: 'Λ' },
+        { id: 3, from: 'W0', to: 'W0', loop: 0, ev: 'timeout', act: 'udt_send(sndpkt)\nstart_timer' },
+        { id: 4, from: 'W0', to: 'C1', ev: 'rdt_rcv(rcvpkt) && notcorrupt(rcvpkt)\n  && isACK(rcvpkt, 0)', act: 'stop_timer' },
+        { id: 5, from: 'C1', to: 'C1', loop: 130, ev: 'rdt_rcv(rcvpkt)', act: 'Λ' },
+        { id: 6, from: 'C1', to: 'W1', ev: 'rdt_send(data)', act: 'sndpkt = make_pkt(1, data, checksum)\nudt_send(sndpkt)\nstart_timer' },
+        { id: 7, from: 'W1', to: 'W1', loop: 230, ev: 'rdt_rcv(rcvpkt) &&\n  (corrupt(rcvpkt) || isACK(rcvpkt, 0))', act: 'Λ' },
+        { id: 8, from: 'W1', to: 'W1', loop: 180, ev: 'timeout', act: 'udt_send(sndpkt)\nstart_timer' },
+        { id: 9, from: 'W1', to: 'C0', ev: 'rdt_rcv(rcvpkt) && notcorrupt(rcvpkt)\n  && isACK(rcvpkt, 1)', act: 'stop_timer' },
+        { id: 10, from: 'C0', to: 'C0', loop: 310, ev: 'rdt_rcv(rcvpkt)', act: 'Λ' },
+      ]),
+      receiver: recv22,
+    },
+  };
+
+  const free = { id: 'free', name: 'Free run', desc: 'No scripted faults. Set random error rates below, or click packets in flight to damage them.', faults: [] };
+  const SCEN = {
+    '1.0': [
+      { id: 'clean', name: 'Perfect channel', desc: 'Every packet arrives intact. No feedback is needed, because under this channel model nothing can go wrong.', faults: [] },
+      { id: 'bits', name: 'Assumption broken: bit error', desc: 'Bits in the second packet are flipped. rdt1.0 has no checksum, so the corrupted data reaches the application unnoticed.', faults: [{ dir: 's2r', ord: 2, kind: 'corrupt' }] },
+      { id: 'loss', name: 'Assumption broken: packet loss', desc: 'The third packet is lost. Neither side notices, and that data never arrives.', faults: [{ dir: 's2r', ord: 3, kind: 'lose' }] },
+      free,
+    ],
+    '2.0': [
+      { id: 'clean', name: 'No errors', desc: 'Each packet is checked and acknowledged. The sender waits for feedback before sending the next packet (stop-and-wait).', faults: [] },
+      { id: 'data', name: 'Corrupted data packet', desc: 'The checksum on the second packet fails. The receiver replies NAK and the sender retransmits.', faults: [{ dir: 's2r', ord: 2, kind: 'corrupt' }] },
+      { id: 'flaw', name: 'Fatal flaw: garbled ACK', desc: 'The ACK for B arrives corrupted. The sender cannot tell an ACK from a NAK, and you decide what it does next.', faults: [{ dir: 'r2s', ord: 2, kind: 'corrupt' }] },
+      { id: 'loss', name: 'Assumption broken: packet loss', desc: 'rdt2.0 assumes packets are never lost. When one disappears, both sides wait forever.', faults: [{ dir: 's2r', ord: 2, kind: 'lose' }] },
+      free,
+    ],
+    '2.1': [
+      { id: 'clean', name: 'No errors', desc: 'Packets alternate between sequence numbers 0 and 1.', faults: [] },
+      { id: 'garbled', name: 'Garbled ACK, handled', desc: 'The ACK for B arrives corrupted, so the sender retransmits. The sequence number lets the receiver recognise the duplicate, acknowledge it again and discard it.', faults: [{ dir: 'r2s', ord: 2, kind: 'corrupt' }] },
+      { id: 'data', name: 'Corrupted data packet', desc: 'The checksum on the second packet fails. The receiver replies NAK and stays in the same state.', faults: [{ dir: 's2r', ord: 2, kind: 'corrupt' }] },
+      { id: 'loss', name: 'Assumption broken: packet loss', desc: 'Sequence numbers do not help against loss. Without a timer the protocol still stalls.', faults: [{ dir: 's2r', ord: 2, kind: 'lose' }] },
+      free,
+    ],
+    '2.2': [
+      { id: 'clean', name: 'No errors', desc: 'ACKs now carry the sequence number of the packet they acknowledge.', faults: [] },
+      { id: 'dupack', name: 'Duplicate ACK instead of NAK', desc: 'The second packet is corrupted. The receiver re-sends ACK0 for the last good packet, and the sender treats that duplicate ACK as a NAK.', faults: [{ dir: 's2r', ord: 2, kind: 'corrupt' }] },
+      { id: 'garbled', name: 'Garbled ACK', desc: 'The ACK for B arrives corrupted. The sender retransmits, and the receiver re-sends the ACK for the duplicate.', faults: [{ dir: 'r2s', ord: 2, kind: 'corrupt' }] },
+      free,
+    ],
+    '3.0': [
+      { id: 'a', name: '(a) No loss', desc: 'Each packet starts the countdown timer; each ACK stops it.', faults: [] },
+      { id: 'b', name: '(b) Packet loss', desc: 'pkt1 (B) is lost. No ACK arrives, the timer expires, and the sender retransmits.', faults: [{ dir: 's2r', ord: 2, kind: 'lose' }] },
+      { id: 'c', name: '(c) ACK loss', desc: 'ACK1 is lost. The sender times out and retransmits; the receiver detects the duplicate and re-sends ACK1.', faults: [{ dir: 'r2s', ord: 2, kind: 'lose' }] },
+      { id: 'd', name: '(d) Premature timeout', desc: 'ACK1 is delayed beyond the timeout. The sender retransmits needlessly; duplicates on both sides are detected and ignored.', faults: [{ dir: 'r2s', ord: 2, kind: 'delay' }] },
+      free,
+    ],
+  };
+
+  // ---------- simulation ----------
+  function create(o) {
+    const spec = SPEC[o.proto];
+    const scen = SCEN[o.proto].find(x => x.id === o.scenario) || SCEN[o.proto][0];
+    const s = {
+      proto: o.proto, spec, scen, N: o.N, T: o.T, now: 0, queue: [], eid: 0, packets: [],
+      ord: { s2r: 0, r2s: 0 }, cur: 0,
+      S: { state: spec.sender.init, last: null }, R: { state: spec.receiver.init, last: null },
+      sndpkt: null, rsnd: null, timers: [], token: 0,
+      delivered: [], anns: [], log: [], narr: '', status: 'ready', pending: null,
+      rnd: rng32((o.seed >>> 0) || 1), pLoss: o.pLoss || 0, pCorrupt: o.pCorrupt || 0,
+    };
+    if (o.proto === '2.2' || o.proto === '3.0') s.rsnd = { seq: 1 };
+    push(s, 0.25, 'app');
+    s.narr = 'Press Play, or Step to advance one event at a time.';
+    return s;
+  }
+
+  const push = (s, t, type, data) => {
+    s.queue.push({ t, type, data, id: s.eid++ });
+    s.queue.sort((a, b) => a.t - b.t || a.id - b.id);
+  };
+  const drop = (s, pred) => { s.queue = s.queue.filter(e => !pred(e)); };
+  const say = (s, text) => { s.narr = text; s.log.push({ t: s.now, text }); };
+  const ann = (s, side, text, mark) => s.anns.push({ t: s.now, side, text, mark: !!mark });
+  const hasSeq = p => p === '2.1' || p === '2.2' || p === '3.0';
+  const stateLabel = (s, side, id) => (side === 'S' ? s.spec.sender : s.spec.receiver).states.find(x => x.id === id).lab.join(' ');
+
+  function label(s, p) {
+    if (p.kind === 'DATA') return hasSeq(s.proto) ? `pkt${p.seq} (${L[p.msg]})` : `pkt (${L[p.msg]})`;
+    if (s.proto === '2.2' || s.proto === '3.0') return `ACK${p.seq}`;
+    return p.kind;
+  }
+
+  function fire(s, side, id) {
+    const spec = side === 'S' ? s.spec.sender : s.spec.receiver;
+    const tr = spec.trans.find(t => t.id === id);
+    s[side].state = tr.to;
+    s[side].last = id;
+  }
+
+  function sendPkt(s, dir, kind, seq, msg) {
+    const ord = ++s.ord[dir];
+    const p = { id: s.packets.length, dir, kind, seq, msg, ord, tSend: s.now, tArrive: s.now + D,
+      corrupt: false, lost: false, tLost: null, delayed: false, arrived: false, cause: null };
+    const r1 = s.rnd(), r2 = s.rnd(), r3 = s.rnd();
+    const f = s.scen.faults.find(x => x.dir === dir && x.ord === ord);
+    if (f) {
+      p.cause = 'scripted';
+      if (f.kind === 'corrupt') p.corrupt = true;
+      if (f.kind === 'lose') { p.lost = true; p.tLost = s.now + D * 0.5; }
+      if (f.kind === 'delay') { p.delayed = true; p.tArrive += DELAY_EXTRA; }
+    } else if (r1 < s.pLoss) {
+      p.lost = true; p.tLost = s.now + D * (0.35 + 0.3 * r3); p.cause = 'random';
+    } else if (r2 < s.pCorrupt) {
+      p.corrupt = true; p.cause = 'random';
+    }
+    s.packets.push(p);
+    push(s, p.lost ? p.tLost : p.tArrive, p.lost ? 'lost' : 'arrive', p.id);
+    return p;
+  }
+
+  function applyFault(s, pid, kind) {
+    const p = s.packets[pid];
+    if (!p || p.lost || p.arrived || s.status === 'done' || s.status === 'stalled') return false;
+    const lab = label(s, p);
+    if (kind === 'corrupt') {
+      if (p.corrupt) return false;
+      p.corrupt = true;
+      say(s, `You flipped bits in ${lab}. ${s.proto === '1.0' ? 'rdt1.0 carries no checksum, so nothing will detect it.' : 'Its checksum will fail on arrival.'}`);
+    } else if (kind === 'lose') {
+      p.lost = true; p.tLost = Math.max(s.now, p.tSend + 0.12);
+      drop(s, e => e.type === 'arrive' && e.data === p.id);
+      push(s, p.tLost, 'lost', p.id);
+      say(s, `You removed ${lab} from the channel. It will never arrive.`);
+    } else if (kind === 'delay') {
+      drop(s, e => e.type === 'arrive' && e.data === p.id);
+      p.tArrive += DELAY_EXTRA; p.delayed = true;
+      push(s, p.tArrive, 'arrive', p.id);
+      say(s, `You delayed ${lab} by ${DELAY_EXTRA} time units.`);
+    }
+    p.cause = 'manual';
+    return true;
+  }
+
+  function startTimer(s) {
+    const run = s.timers.find(t => t.tEnd === null);
+    if (run) { run.tEnd = s.now; run.out = 'restarted'; }
+    s.token++;
+    drop(s, e => e.type === 'timeout');
+    s.timers.push({ tStart: s.now, tEnd: null, out: null });
+    push(s, s.now + s.T, 'timeout', s.token);
+  }
+  function stopTimer(s) {
+    const run = s.timers.find(t => t.tEnd === null);
+    if (run) { run.tEnd = s.now; run.out = 'stopped'; }
+    s.token++;
+    drop(s, e => e.type === 'timeout');
+  }
+
+  function resend(s) { sendPkt(s, 's2r', 'DATA', s.sndpkt.seq, s.sndpkt.msg); }
+  function nextMsg(s) {
+    s.cur++;
+    if (s.cur < s.N) push(s, s.now + GAP, 'app');
+  }
+
+  function deliver(s, msg, corrupt) {
+    const status = corrupt ? 'corrupt'
+      : s.delivered.some(d => d.msg === msg && d.status !== 'corrupt') ? 'dup' : 'ok';
+    s.delivered.push({ msg, status, t: s.now });
+    return status;
+  }
+
+  function senderApp(s) {
+    if (s.cur >= s.N) return false;
+    const P = s.proto, st = s.S.state, m = s.cur, Lm = L[m];
+    if (P === '1.0') {
+      fire(s, 'S', 1);
+      sendPkt(s, 's2r', 'DATA', null, m);
+      ann(s, 'S', `rdt_send(${Lm})`);
+      say(s, `The application passes ${Lm} to rdt_send(). The sender puts it in a packet and sends it. There is nothing to wait for.`);
+      s.cur++;
+      if (s.cur < s.N) push(s, s.now + GAP10, 'app');
+      return true;
+    }
+    if (P === '2.0') {
+      if (st !== 'C') return false;
+      fire(s, 'S', 1);
+      s.sndpkt = { seq: null, msg: m };
+      sendPkt(s, 's2r', 'DATA', null, m);
+      ann(s, 'S', `rdt_send(${Lm})`);
+      say(s, `The application passes ${Lm} to rdt_send(). The sender adds a checksum, sends the packet and waits for an ACK or a NAK.`);
+      return true;
+    }
+    const seq = st === 'C0' ? 0 : st === 'C1' ? 1 : null;
+    if (seq === null) return false;
+    fire(s, 'S', P === '3.0' ? (seq === 0 ? 1 : 6) : (seq === 0 ? 1 : 4));
+    s.sndpkt = { seq, msg: m };
+    sendPkt(s, 's2r', 'DATA', seq, m);
+    if (P === '3.0') startTimer(s);
+    ann(s, 'S', `rdt_send(${Lm}), pkt${seq}${P === '3.0' ? ', start timer' : ''}`);
+    say(s, `The application passes ${Lm} to rdt_send(). The sender sends it as pkt${seq}${P === '3.0' ? ' and starts the countdown timer' : ''}, then waits for ${P === '2.1' ? 'an ACK or a NAK' : 'ACK' + seq}.`);
+    return true;
+  }
+
+  function senderTimeout(s) {
+    const run = s.timers.find(t => t.tEnd === null);
+    if (run) { run.tEnd = s.now; run.out = 'expired'; }
+    const st = s.S.state;
+    if (st !== 'W0' && st !== 'W1') return false;
+    fire(s, 'S', st === 'W0' ? 3 : 8);
+    resend(s);
+    startTimer(s);
+    ann(s, 'S', `timeout: resend pkt${s.sndpkt.seq}`, true);
+    say(s, `No valid ACK arrived before the timer expired. The sender retransmits pkt${s.sndpkt.seq} (${L[s.sndpkt.msg]}) and restarts the timer.`);
+    return true;
+  }
+
+  function noTrans(s, p) {
+    ann(s, 'S', `${label(s, p)}: no transition`);
+    say(s, `${label(s, p)} arrives, but no transition leaves “${stateLabel(s, 'S', s.S.state)}” for it. The event is ignored.`);
+    return true;
+  }
+
+  function recvFb(s, p) {
+    const P = s.proto, st = s.S.state, lab = label(s, p);
+    const m = s.sndpkt ? L[s.sndpkt.msg] : '';
+    if (P === '2.0') {
+      if (st !== 'W') return noTrans(s, p);
+      if (p.corrupt) {
+        s.pending = { pid: p.id };
+        ann(s, 'S', 'garbled: ACK or NAK?', true);
+        say(s, `The feedback for ${m} arrives corrupted. The sender cannot tell whether it was an ACK or a NAK, and rdt2.0 defines no transition for this case. Choose what the sender does.`);
+        return true;
+      }
+      if (p.kind === 'NAK') {
+        fire(s, 'S', 2); resend(s);
+        ann(s, 'S', 'NAK: retransmit');
+        say(s, `NAK received. The sender retransmits ${m} and keeps waiting.`);
+        return true;
+      }
+      fire(s, 'S', 3);
+      ann(s, 'S', 'ACK');
+      say(s, `ACK received. ${m} is done, and the sender returns to wait for the next call from above.`);
+      nextMsg(s);
+      return true;
+    }
+    if (P === '2.1' || P === '2.2') {
+      const w = st === 'W0' ? 0 : st === 'W1' ? 1 : null;
+      if (w === null) return noTrans(s, p);
+      const good = P === '2.1' ? (!p.corrupt && p.kind === 'ACK') : (!p.corrupt && p.seq === w);
+      if (good) {
+        fire(s, 'S', w === 0 ? 3 : 6);
+        ann(s, 'S', `${lab} ok`);
+        say(s, `${lab} received intact. The sender moves on and will use sequence number ${1 - w} next.`);
+        nextMsg(s);
+      } else {
+        fire(s, 'S', w === 0 ? 2 : 5); resend(s);
+        const why = p.corrupt ? 'garbled feedback' : P === '2.1' ? 'NAK' : `duplicate ${lab}`;
+        ann(s, 'S', `${why}: resend pkt${w}`, p.corrupt || P === '2.2');
+        say(s, p.corrupt
+          ? `The feedback arrives corrupted. The sender cannot trust it, so it retransmits pkt${w} (${m}). If the receiver already has it, the sequence number will reveal the duplicate.`
+          : P === '2.1' ? `NAK received. The sender retransmits pkt${w} (${m}).`
+            : `The sender expected ACK${w} but received ${lab}, a duplicate ACK for the previous packet. It means pkt${w} did not arrive intact, so the sender retransmits it.`);
+      }
+      return true;
+    }
+    if (P === '3.0') {
+      if (st === 'C0' || st === 'C1') {
+        fire(s, 'S', st === 'C0' ? 10 : 5);
+        ann(s, 'S', `${lab} ignored`);
+        say(s, `${lab} arrives while the sender is waiting for the application. It is a late or duplicate ACK, and the sender ignores it.`);
+        return true;
+      }
+      const w = st === 'W0' ? 0 : 1;
+      if (!p.corrupt && p.seq === w) {
+        fire(s, 'S', w === 0 ? 4 : 9); stopTimer(s);
+        ann(s, 'S', `${lab} ok, stop timer`);
+        say(s, `${lab} received intact. The sender stops the timer and waits for the next call from above.`);
+        nextMsg(s);
+      } else {
+        fire(s, 'S', w === 0 ? 2 : 7);
+        ann(s, 'S', `${p.corrupt ? 'garbled ACK' : lab}: ignore`, true);
+        say(s, p.corrupt
+          ? `The ACK arrives corrupted. Unlike rdt2.2, the sender does not retransmit at once. It does nothing and lets the timer decide.`
+          : `The sender expected ACK${w} but received ${lab}, a duplicate. It does nothing and lets the timer decide.`);
+      }
+      return true;
+    }
+    return false;
+  }
+
+  function decide(s, choice) {
+    if (!s.pending) return;
+    const p = s.packets[s.pending.pid], m = L[s.sndpkt.msg];
+    s.pending = null;
+    if (choice === 'resend') {
+      fire(s, 'S', 2); resend(s);
+      ann(s, 'S', 'assume NAK: resend', true);
+      say(s, p.kind === 'ACK'
+        ? `It was an ACK: ${m} had already been delivered. The receiver has no way to recognise the retransmission, so it will deliver ${m} twice.`
+        : `It was a NAK, so retransmitting is correct this time. That is luck, not design.`);
+    } else {
+      fire(s, 'S', 3);
+      ann(s, 'S', 'assume ACK: move on', true);
+      say(s, p.kind === 'NAK'
+        ? `It was a NAK: ${m} never reached the application intact. By moving on, the sender loses ${m} for good.`
+        : `It was an ACK, so moving on is correct this time. That is luck, not design.`);
+      nextMsg(s);
+    }
+  }
+
+  function recvData(s, p) {
+    const P = s.proto, st = s.R.state, m = L[p.msg], lab = label(s, p);
+    if (P === '1.0') {
+      fire(s, 'R', 1);
+      deliver(s, p.msg, p.corrupt);
+      ann(s, 'R', p.corrupt ? `deliver ${m}, corrupted` : `deliver ${m}`, p.corrupt);
+      say(s, p.corrupt
+        ? `The receiver delivers corrupted data to the application. rdt1.0 has no checksum, so the error passes straight through.`
+        : `The receiver extracts ${m} and delivers it to the application.`);
+      return true;
+    }
+    if (P === '2.0') {
+      if (p.corrupt) {
+        fire(s, 'R', 1);
+        sendPkt(s, 'r2s', 'NAK', null, p.msg);
+        ann(s, 'R', 'checksum fails: NAK');
+        say(s, `The checksum on ${lab} fails. The receiver discards it and replies NAK.`);
+      } else {
+        fire(s, 'R', 2);
+        const d = deliver(s, p.msg, false);
+        sendPkt(s, 'r2s', 'ACK', null, p.msg);
+        ann(s, 'R', d === 'dup' ? `deliver ${m} again: duplicate` : `deliver ${m}, ACK`, d === 'dup');
+        say(s, d === 'dup'
+          ? `The receiver delivers ${m} a second time. Without sequence numbers it cannot tell a retransmission from new data.`
+          : `The checksum is good. The receiver delivers ${m} and replies ACK.`);
+      }
+      return true;
+    }
+    const exp = st === 'R0' ? 0 : 1;
+    if (P === '2.1') {
+      if (p.corrupt) {
+        fire(s, 'R', exp === 0 ? 2 : 5);
+        sendPkt(s, 'r2s', 'NAK', null, p.msg);
+        ann(s, 'R', 'checksum fails: NAK');
+        say(s, `The checksum on ${lab} fails. The receiver replies NAK and keeps waiting for seq ${exp}.`);
+      } else if (p.seq === exp) {
+        fire(s, 'R', exp === 0 ? 1 : 4);
+        deliver(s, p.msg, false);
+        sendPkt(s, 'r2s', 'ACK', null, p.msg);
+        ann(s, 'R', `deliver ${m}, ACK`);
+        say(s, `${lab} is the expected sequence number. The receiver delivers ${m}, replies ACK and now expects seq ${1 - exp}.`);
+      } else {
+        fire(s, 'R', exp === 0 ? 3 : 6);
+        sendPkt(s, 'r2s', 'ACK', null, p.msg);
+        ann(s, 'R', `duplicate pkt${p.seq}: ACK, discard`, true);
+        say(s, `The receiver expects seq ${exp} but receives seq ${p.seq}: a copy of data it already delivered. It replies ACK and discards the packet.`);
+      }
+      return true;
+    }
+    // 2.2 and 3.0 share the receiver
+    if (!p.corrupt && p.seq === exp) {
+      fire(s, 'R', exp === 0 ? 1 : 3);
+      deliver(s, p.msg, false);
+      s.rsnd = { seq: exp };
+      sendPkt(s, 'r2s', 'ACK', exp, p.msg);
+      ann(s, 'R', `deliver ${m}, ACK${exp}`);
+      say(s, `${lab} is the expected sequence number. The receiver delivers ${m}, replies ACK${exp} and now expects seq ${1 - exp}.`);
+    } else {
+      fire(s, 'R', exp === 0 ? 2 : 4);
+      const a = s.rsnd.seq;
+      sendPkt(s, 'r2s', 'ACK', a, p.msg);
+      ann(s, 'R', p.corrupt ? `checksum fails: resend ACK${a}` : `duplicate pkt${p.seq}: resend ACK${a}`, true);
+      say(s, p.corrupt
+        ? `The checksum on ${lab} fails. Instead of a NAK, the receiver re-sends ACK${a} for the last packet it received correctly.`
+        : `The receiver expects seq ${exp} but receives seq ${p.seq}, a duplicate. It discards the packet and re-sends ACK${a}.`);
+    }
+    return true;
+  }
+
+  function handle(s, e) {
+    if (e.type === 'app') return senderApp(s);
+    if (e.type === 'timeout') return e.data === s.token ? senderTimeout(s) : false;
+    const p = s.packets[e.data];
+    if (e.type === 'lost') {
+      if (!p.lost || e.t !== p.tLost) return false;
+      ann(s, p.dir === 's2r' ? 'S' : 'R', `${label(s, p)} lost`, true);
+      say(s, `${label(s, p)} is lost in the channel.`);
+      return true;
+    }
+    if (e.type === 'arrive') {
+      if (p.lost || p.arrived || e.t !== p.tArrive) return false;
+      p.arrived = true;
+      return p.dir === 's2r' ? recvData(s, p) : recvFb(s, p);
+    }
+    return false;
+  }
+
+  function finish(s) {
+    const senderIdle = s.proto === '1.0' || /^C/.test(s.S.state);
+    if (s.cur >= s.N && senderIdle) {
+      s.status = 'done';
+      say(s, s.proto === '1.0'
+        ? `All ${s.N} messages have been sent. Check what the application actually received.`
+        : `All ${s.N} messages have been acknowledged. The run is complete.`);
+    } else {
+      s.status = 'stalled';
+      say(s, `Deadlock. The sender waits in “${stateLabel(s, 'S', s.S.state)}” for feedback that will never come, and nothing in rdt${s.proto} can end the wait. A timer is needed.`);
+    }
+  }
+
+  function advance(s, dt) {
+    if (s.pending || s.status === 'done' || s.status === 'stalled') return;
+    const target = s.now + dt;
+    while (s.queue.length && s.queue[0].t <= target) {
+      const e = s.queue.shift();
+      s.now = e.t;
+      handle(s, e);
+      if (s.pending) return;
+    }
+    if (!s.queue.length) finish(s); else s.now = target;
+  }
+
+  function stepNext(s) {
+    if (s.pending || s.status === 'done' || s.status === 'stalled') return;
+    while (s.queue.length) {
+      const t = s.queue[0].t;
+      let acted = false;
+      while (s.queue.length && s.queue[0].t === t) {
+        const e = s.queue.shift();
+        s.now = e.t;
+        if (handle(s, e)) acted = true;
+        if (s.pending) return;
+      }
+      if (acted) break;
+    }
+    if (!s.queue.length) finish(s);
+  }
+
+  return { SPEC, SCEN, create, advance, stepNext, applyFault, decide, label, stateLabel, L, D };
+})();
+if (typeof module !== 'undefined') module.exports = RDT;
+
+</script>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const PROTOS = ['1.0', '2.0', '2.1', '2.2', '3.0'];
+  const cfg = { proto: '1.0', scenario: 'clean', N: 5, T: 2.5, seed: 7, pLoss: 0, pCorrupt: 0 };
+  let sim, playing = false, speed = 0.7, tool = 'corrupt', follow = true, lastTs = 0;
+  let fsmKey = { S: '', R: '' }, logLen = 0;
+  const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  // ---------- controls ----------
+  const protoBox = $('protos');
+  PROTOS.forEach(p => {
+    const b = document.createElement('button');
+    b.textContent = 'rdt' + p; b.dataset.p = p;
+    b.addEventListener('click', () => { cfg.proto = p; fillScen(); cfg.scenario = RDT.SCEN[p][0].id; $('scen').value = cfg.scenario; applyScenDefaults(); reset(); });
+    protoBox.appendChild(b);
+  });
+  function fillScen() {
+    $('scen').innerHTML = RDT.SCEN[cfg.proto].map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
+  }
+  $('scen').addEventListener('change', e => { cfg.scenario = e.target.value; applyScenDefaults(); reset(); });
+  function applyScenDefaults() {
+    const free = cfg.scenario === 'free';
+    if (free) {
+      cfg.pCorrupt = 0.15;
+      cfg.pLoss = cfg.proto === '3.0' ? 0.15 : 0;
+    } else { cfg.pCorrupt = 0; cfg.pLoss = 0; }
+    $('pc').value = Math.round(cfg.pCorrupt * 100);
+    $('pl').value = Math.round(cfg.pLoss * 100);
+  }
+  const numIn = (id, fn) => $(id).addEventListener('change', e => { fn(+e.target.value); reset(); });
+  numIn('pc', v => cfg.pCorrupt = Math.max(0, Math.min(60, v || 0)) / 100);
+  numIn('pl', v => cfg.pLoss = Math.max(0, Math.min(60, v || 0)) / 100);
+  numIn('seed', v => cfg.seed = Math.max(1, v | 0));
+  $('nmsg').addEventListener('change', e => { cfg.N = +e.target.value; reset(); });
+  $('to').addEventListener('input', e => { cfg.T = +e.target.value; $('toVal').textContent = cfg.T.toFixed(1); });
+  $('to').addEventListener('change', reset);
+  $('speed').addEventListener('input', e => speed = +e.target.value);
+  $('tool').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    tool = b.dataset.k;
+    $('tool').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
+  });
+  $('play').addEventListener('click', togglePlay);
+  $('step').addEventListener('click', () => { setPlaying(false); follow = true; RDT.stepNext(sim); render(); });
+  $('reset').addEventListener('click', reset);
+  $('dResend').addEventListener('click', () => { RDT.decide(sim, 'resend'); render(); });
+  $('dNext').addEventListener('click', () => { RDT.decide(sim, 'next'); render(); });
+  document.addEventListener('keydown', e => {
+    if (e.target.closest('input, select, textarea')) return;
+    if (e.key === ' ' && !e.target.closest('button')) { e.preventDefault(); togglePlay(); }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); $('step').click(); }
+    else if (e.key === 'r' || e.key === 'R') reset();
+  });
+  const sc = $('scroll');
+  ['wheel', 'touchstart'].forEach(ev => sc.addEventListener(ev, () => { follow = false; }, { passive: true }));
+
+  $('seq').addEventListener('pointerdown', e => {
+    const h = e.target.closest('[data-pid]'); if (!h) return;
+    if (RDT.applyFault(sim, +h.dataset.pid, tool)) render();
+  });
+
+  function togglePlay() {
+    if (sim.status === 'done' || sim.status === 'stalled') { reset(); setPlaying(true); return; }
+    setPlaying(!playing);
+  }
+  function setPlaying(v) {
+    playing = v; if (v) follow = true;
+    $('play').textContent = v ? 'Pause' : 'Play';
+    $('play').classList.toggle('on', !v);
+  }
+  function reset() {
+    sim = RDT.create(cfg);
+    setPlaying(false); follow = true; fsmKey = { S: '', R: '' }; logLen = 0;
+    $('log').innerHTML = '';
+    sc.scrollTop = 0;
+    syncControls(); render();
+  }
+  function syncControls() {
+    protoBox.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.p === cfg.proto));
+    const s = RDT.SCEN[cfg.proto].find(x => x.id === cfg.scenario);
+    $('scenDesc').textContent = s.desc;
+    $('channel').textContent = RDT.SPEC[cfg.proto].channel;
+    const free = cfg.scenario === 'free';
+    ['pc', 'pl', 'seed'].forEach(id => $(id).disabled = !free);
+    $('randGroup').classList.toggle('dim', !free);
+    const t30 = cfg.proto === '3.0';
+    $('to').disabled = !t30; $('toWrap').classList.toggle('dim', !t30);
+  }
+
+  // ---------- FSM drawing ----------
+  const RX = 60, RY = 29;
+  const rad = a => a * Math.PI / 180;
+  const ell = (st, a) => ({ x: st.x + RX * Math.sin(rad(a)), y: st.y - RY * Math.cos(rad(a)) });
+  function toward(st, tx, ty) {
+    const dx = tx - st.x, dy = ty - st.y, d = Math.hypot(dx, dy) || 1, ux = dx / d, uy = dy / d;
+    const k = 1 / Math.sqrt((ux / RX) ** 2 + (uy / RY) ** 2);
+    return { x: st.x + ux * k, y: st.y + uy * k };
+  }
+  const f1 = n => n.toFixed(1);
+  function badge(x, y, id, on) {
+    const c = on ? ' on' : '';
+    return `<circle class="bc${c}" cx="${f1(x)}" cy="${f1(y)}" r="9"/><text class="bt${c}" x="${f1(x)}" y="${f1(y + 3.8)}" text-anchor="middle">${id}</text>`;
+  }
+  function drawFSM(spec, cur, last, pre) {
+    const st = Object.fromEntries(spec.states.map(s => [s.id, s]));
+    let out = `<svg viewBox="0 0 380 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="State diagram">` +
+      `<defs><marker id="${pre}n" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="mn" d="M0 0L10 5L0 10z"/></marker>` +
+      `<marker id="${pre}a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="ma" d="M0 0L10 5L0 10z"/></marker></defs>`;
+    let badges = '', active = '';
+    for (const t of spec.trans) {
+      const on = t.id === last;
+      const cls = on ? 'tr on' : 'tr', mk = `marker-end="url(#${pre}${on ? 'a' : 'n'})"`;
+      let path, bx, by;
+      if (t.from === t.to) {
+        const s = st[t.from], a = t.loop, p1 = ell(s, a - 17), p2 = ell(s, a + 17);
+        const nx = Math.sin(rad(a)), ny = -Math.cos(rad(a)), k = 46;
+        path = `<path class="${cls}" d="M${f1(p1.x)} ${f1(p1.y)} C${f1(p1.x + nx * k)} ${f1(p1.y + ny * k)} ${f1(p2.x + nx * k)} ${f1(p2.y + ny * k)} ${f1(p2.x)} ${f1(p2.y)}" ${mk}/>`;
+        const m = ell(s, a); bx = m.x + nx * 36; by = m.y + ny * 36;
+      } else {
+        const a = st[t.from], b = st[t.to];
+        const pair = spec.trans.some(o => o.from === t.to && o.to === t.from);
+        if (pair) {
+          const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy);
+          const cx = mx + (dy / d) * 42, cy = my - (dx / d) * 42;
+          const s1 = toward(a, cx, cy), s2 = toward(b, cx, cy);
+          path = `<path class="${cls}" d="M${f1(s1.x)} ${f1(s1.y)} Q${f1(cx)} ${f1(cy)} ${f1(s2.x)} ${f1(s2.y)}" ${mk}/>`;
+          bx = 0.25 * s1.x + 0.5 * cx + 0.25 * s2.x; by = 0.25 * s1.y + 0.5 * cy + 0.25 * s2.y;
+        } else {
+          const s1 = toward(a, b.x, b.y), s2 = toward(b, a.x, a.y);
+          path = `<line class="${cls}" x1="${f1(s1.x)}" y1="${f1(s1.y)}" x2="${f1(s2.x)}" y2="${f1(s2.y)}" ${mk}/>`;
+          bx = (s1.x + s2.x) / 2; by = (s1.y + s2.y) / 2;
+        }
+      }
+      if (on) active = path; else out += path;
+      badges += badge(bx, by, t.id, on);
+    }
+    out += active;
+    const is = st[spec.init], ia = spec.initAngle, ip = ell(is, ia), nx = Math.sin(rad(ia)), ny = -Math.cos(rad(ia));
+    out += `<circle class="idot" cx="${f1(ip.x + nx * 28)}" cy="${f1(ip.y + ny * 28)}" r="3.2"/>` +
+      `<line class="init" x1="${f1(ip.x + nx * 26)}" y1="${f1(ip.y + ny * 26)}" x2="${f1(ip.x)}" y2="${f1(ip.y)}" marker-end="url(#${pre}a)"/>`;
+    for (const s of spec.states) {
+      const c = s.id === cur ? ' on' : '';
+      out += `<ellipse class="e${c}" cx="${s.x}" cy="${s.y}" rx="${RX}" ry="${RY}"/>`;
+      s.lab.forEach((l, i) => {
+        out += `<text class="st${c}" x="${s.x}" y="${s.y + 4 + i * 14 - (s.lab.length - 1) * 7}" text-anchor="middle">${esc(l)}</text>`;
+      });
+    }
+    return out + badges + '</svg>';
+  }
+  function renderFSM(side) {
+    const spec = side === 'S' ? sim.spec.sender : sim.spec.receiver;
+    const m = sim[side];
+    const key = `${sim.proto}|${m.state}|${m.last}`;
+    if (fsmKey[side] === key) return;
+    fsmKey[side] = key;
+    const root = $(side === 'S' ? 'fsmS' : 'fsmR');
+    root.querySelector('.svgbox').innerHTML = drawFSM(spec, m.state, m.last, 'mk' + side);
+    root.querySelector('.now').innerHTML = `Current state: <b>${esc(RDT.stateLabel(sim, side, m.state))}</b>`;
+    let rows = '';
+    if (spec.initAct) rows += `<tr><td class="n">·</td><td><div class="ev">initial state</div><div class="act">${esc(spec.initAct)}</div></td></tr>`;
+    rows += spec.trans.map(t => `<tr class="${t.id === m.last ? 'hit' : ''}"><td class="n">${t.id}</td><td><div class="ev">${esc(t.ev)}</div><div class="act">${esc(t.act)}</div></td></tr>`).join('');
+    root.querySelector('tbody').innerHTML = rows;
+  }
+
+  // ---------- sequence diagram ----------
+  const W = 640, XS = 200, XR = 440, TOP = 46, K = 76;
+  const Y = t => TOP + t * K;
+  function renderSeq() {
+    const s = sim, now = s.now;
+    let tmax = now + 0.6;
+    for (const p of s.packets) tmax = Math.max(tmax, p.lost ? p.tLost : p.tArrive);
+    const scaleNow = sc.clientWidth ? Math.max(sc.clientWidth, 480) / W : 1;
+    const minH = sc.clientHeight / scaleNow;
+    const H = Math.max(Y(tmax) + 70, minH || 400);
+    let o = `<defs><marker id="sa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path class="ah" d="M0 0L10 5L0 10z"/></marker></defs>`;
+    for (let t = 0; Y(t) < H - 20; t += 1) {
+      o += `<line class="grid" x1="40" y1="${Y(t)}" x2="${W}" y2="${Y(t)}"/><text class="tick" x="6" y="${Y(t) + 4}">t=${t}</text>`;
+    }
+    o += `<text class="hdr" x="${XS}" y="24" text-anchor="middle">Sender</text><text class="hdr" x="${XR}" y="24" text-anchor="middle">Receiver</text>`;
+    o += `<line class="lane" x1="${XS}" y1="32" x2="${XS}" y2="${H - 10}"/><line class="lane" x1="${XR}" y1="32" x2="${XR}" y2="${H - 10}"/>`;
+
+    for (const tm of s.timers) {
+      const e = tm.tEnd === null ? now : tm.tEnd;
+      o += `<line class="timer${tm.out === 'expired' ? ' exp' : ''}" x1="${XS - 7}" y1="${Y(tm.tStart)}" x2="${XS - 7}" y2="${Y(e)}"/>`;
+    }
+
+    let hits = '';
+    for (const p of s.packets) {
+      const x0 = p.dir === 's2r' ? XS : XR, x1 = p.dir === 's2r' ? XR : XS;
+      const y0 = Y(p.tSend), y1 = Y(p.tArrive);
+      const xAt = t => x0 + (x1 - x0) * (t - p.tSend) / (p.tArrive - p.tSend);
+      const lostShown = p.lost && now >= p.tLost;
+      const tEnd = lostShown ? p.tLost : Math.min(now, p.tArrive);
+      const bad = p.corrupt ? ' bad' : '';
+      const arrived = !p.lost && now >= p.tArrive;
+      o += `<line class="pk${bad}" x1="${x0}" y1="${y0}" x2="${f1(xAt(tEnd))}" y2="${f1(Y(tEnd))}"${arrived ? ' marker-end="url(#sa)"' : ''}/>`;
+      if (lostShown) {
+        const cx = xAt(p.tLost), cy = Y(p.tLost);
+        o += `<path class="x" d="M${f1(cx - 7)} ${f1(cy - 7)}L${f1(cx + 7)} ${f1(cy + 7)}M${f1(cx + 7)} ${f1(cy - 7)}L${f1(cx - 7)} ${f1(cy + 7)}"/>`;
+      } else if (!arrived) {
+        const cx = xAt(now), cy = Y(now);
+        o += `<line class="fut" x1="${f1(cx)}" y1="${f1(cy)}" x2="${x1}" y2="${y1}"/><circle class="dot" cx="${f1(cx)}" cy="${f1(cy)}" r="4"/>`;
+        hits += `<line class="hit" data-pid="${p.id}" x1="${x0}" y1="${y0}" x2="${x1}" y2="${y1}"><title>${esc(RDT.label(s, p))}: click to apply fault</title></line>`;
+      }
+      // label along the planned path
+      let ang = Math.atan2(y1 - y0, x1 - x0) * 180 / Math.PI;
+      if (ang > 90) ang -= 180; if (ang < -90) ang += 180;
+      const lx = (x0 + x1) / 2, ly = (y0 + y1) / 2;
+      let txt = RDT.label(s, p);
+      if (p.corrupt) txt += ', bits flipped';
+      if (p.delayed) txt += ', delayed';
+      o += `<text class="pl${bad}" text-anchor="middle" transform="translate(${f1(lx)} ${f1(ly)}) rotate(${f1(ang)})" dy="-6">${esc(txt)}</text>`;
+    }
+
+    const lastY = { S: -99, R: -99 };
+    for (const a of s.anns) {
+      let y = Math.max(Y(a.t) + 4, lastY[a.side] + 15);
+      lastY[a.side] = y;
+      const x = a.side === 'S' ? XS - 16 : XR + 14;
+      o += `<text class="an${a.mark ? ' mark' : ''}" x="${x}" y="${f1(y)}" text-anchor="${a.side === 'S' ? 'end' : 'start'}">${esc(a.text)}</text>`;
+    }
+    o += `<line class="nowl" x1="40" y1="${f1(Y(now))}" x2="${W}" y2="${f1(Y(now))}"/><text class="nowt" x="${W - 4}" y="${f1(Y(now) - 4)}" text-anchor="end">now</text>`;
+    o += hits;
+    const svg = $('seq');
+    svg.setAttribute('viewBox', `0 0 ${W} ${f1(H)}`);
+    svg.innerHTML = o;
+    if (follow) {
+      const scale = svg.clientWidth / W;
+      const target = Y(now) * scale - sc.clientHeight * 0.55;
+      sc.scrollTop = Math.max(0, target);
+    }
+  }
+
+  // ---------- panels ----------
+  function renderLower() {
+    const s = sim, L = RDT.L;
+    const ended = s.status === 'done' || s.status === 'stalled';
+    const cap = { ok: '', dup: 'duplicate', corrupt: 'corrupted', missing: 'missing' };
+    let boxes = s.delivered.map(d => ({ l: L[d.msg], st: d.status }));
+    if (ended) for (let i = 0; i < s.N; i++) if (!s.delivered.some(d => d.msg === i && d.status !== 'corrupt')) boxes.push({ l: L[i], st: 'missing' });
+    $('deliv').innerHTML = boxes.length
+      ? boxes.map(b => `<div class="box ${b.st}"><div class="l">${b.l}</div><div class="c">${cap[b.st]}</div></div>`).join('')
+      : '<p class="empty">Nothing delivered yet.</p>';
+    const good = s.delivered.filter(d => d.status === 'ok').length;
+    const dup = s.delivered.filter(d => d.status === 'dup').length;
+    const cor = s.delivered.filter(d => d.status === 'corrupt').length;
+    const miss = boxes.filter(b => b.st === 'missing').length;
+    const parts = [`${good} of ${s.N} delivered correctly`];
+    if (dup) parts.push(`${dup} duplicate${dup > 1 ? 's' : ''}`);
+    if (cor) parts.push(`${cor} corrupted`);
+    if (miss) parts.push(`${miss} missing`);
+    $('summary').textContent = parts.join(', ') + '.';
+    if (s.log.length !== logLen) {
+      const ol = $('log');
+      for (let i = logLen; i < s.log.length; i++) {
+        const li = document.createElement('li');
+        li.innerHTML = `<span>t=${s.log[i].t.toFixed(2)}</span><div>${esc(s.log[i].text)}</div>`;
+        ol.appendChild(li);
+      }
+      logLen = s.log.length;
+      ol.scrollTop = ol.scrollHeight;
+    }
+  }
+
+  function render() {
+    renderFSM('S'); renderFSM('R'); renderSeq(); renderLower();
+    const st = sim.pending ? 'Waiting for your decision'
+      : sim.status === 'done' ? 'Complete' : sim.status === 'stalled' ? 'Stalled' : playing ? 'Running' : 'Paused';
+    $('status').innerHTML = `<b>${st}</b>`;
+    $('clock').textContent = `t = ${sim.now.toFixed(2)}`;
+    $('narr').textContent = sim.narr;
+    $('modal').hidden = !sim.pending;
+    $('step').disabled = !!sim.pending || sim.status === 'done' || sim.status === 'stalled';
+    if ((sim.status === 'done' || sim.status === 'stalled') && playing) setPlaying(false);
+    if (sim.status === 'done' || sim.status === 'stalled') $('play').textContent = 'Replay';
+  }
+
+  function frame(ts) {
+    const dt = lastTs ? Math.min(0.1, (ts - lastTs) / 1000) : 0;
+    lastTs = ts;
+    if (playing && !sim.pending) { RDT.advance(sim, dt * speed); render(); }
+    requestAnimationFrame(frame);
+  }
+
+  fillScen(); applyScenDefaults(); reset();
+  window.addEventListener('resize', () => render());
+  requestAnimationFrame(frame);
+})();
+
+</script>
+</body>
+</html>

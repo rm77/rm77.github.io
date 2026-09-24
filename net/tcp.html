@@ -1,0 +1,575 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TCP vs UDP: segmentation, loss and retransmission</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f3f5f7;--panel:#fff;--ink:#15202b;--muted:#5a6673;--line:#d5dbe1;--soft:#eef1f4;
+  --accent:#0a5fb4;--on-accent:#fff;
+  --tcp:#1971c2;--udp:#0c8599;--ok:#2b8a3e;--held:#e0a800;--loss:#e03131;--retx:#e8590c;--ctl:#7048e8;--frag:#9c36b5;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e1319;--panel:#161d25;--ink:#e4e9ee;--muted:#96a2af;--line:#2a3440;--soft:#1d2630;
+  --accent:#5aa9ff;--on-accent:#08121c;--tcp:#5cb3ff;--udp:#3bc9db;--ok:#5fd47a;--held:#f2c14e;--loss:#ff6b6b;--retx:#ff922b;--ctl:#9775fa;--frag:#da77f2;}}
+:root[data-theme="dark"]{
+  --bg:#0e1319;--panel:#161d25;--ink:#e4e9ee;--muted:#96a2af;--line:#2a3440;--soft:#1d2630;
+  --accent:#5aa9ff;--on-accent:#08121c;--tcp:#5cb3ff;--udp:#3bc9db;--ok:#5fd47a;--held:#f2c14e;--loss:#ff6b6b;--retx:#ff922b;--ctl:#9775fa;--frag:#da77f2;}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--sans)}
+.wrap{max-width:1320px;margin:0 auto;padding:18px 16px 40px}
+h1{font-size:1.45rem;line-height:1.2;margin:0;font-weight:700;letter-spacing:-.01em}
+.sub{color:var(--muted);margin:4px 0 0;font-size:.92rem;max-width:80ch}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:14px 16px;margin-top:14px}
+h2{font-size:1.05rem;margin:0}
+h3{font-size:.95rem;margin:0 0 8px}
+.muted{color:var(--muted)}
+code{font-family:var(--mono);font-size:.88em}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* controls */
+.ctrls{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px 16px;align-items:end}
+.ctrls label{display:flex;flex-direction:column;font-size:.78rem;color:var(--muted);gap:3px}
+.ctrls label.chk{flex-direction:row;align-items:center;gap:6px;color:var(--ink);font-size:.85rem}
+.ctrls select{width:100%}
+.ctrls output{color:var(--ink);font-family:var(--mono);font-size:.8rem}
+input[type=range]{accent-color:var(--accent);width:100%}
+select,button,input[type=text],input[type=number]{font:inherit;font-size:.88rem;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:5px 8px}
+button{cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent);min-width:96px}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;align-items:center}
+.clock{font-family:var(--mono);font-size:.85rem;margin-left:auto}
+.hint{font-size:.8rem;color:var(--muted)}
+
+/* segmentation */
+.segrow{display:grid;grid-template-columns:150px 1fr;gap:10px;align-items:center;margin-top:8px}
+.segrow .who{font-weight:600;font-size:.88rem}
+.bar{display:flex;gap:2px;height:26px}
+.bar div{flex:1 1 0;min-width:0;background:var(--c);opacity:.85;color:#fff;font:600 9.5px var(--mono);display:flex;align-items:center;justify-content:center;border-radius:2px;overflow:hidden;white-space:nowrap}
+.bar.one div{border-radius:0}
+.segnote{font-size:.8rem;color:var(--muted);margin:3px 0 0 160px;max-width:95ch}
+.hdrs{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:14px}
+.hdr .grid32{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line);font-size:.74rem;text-align:center}
+.hdr .grid32 div{border:1px solid var(--line);padding:4px 2px;background:color-mix(in srgb,var(--c) 10%,transparent)}
+.hdr .grid32 .w2{grid-column:span 2}.hdr .grid32 .w4{grid-column:span 4}.hdr .grid32 .w1{grid-column:span 1}
+.hdr p{font-size:.8rem;color:var(--muted);margin:5px 0 0}
+@media (max-width:760px){.hdrs{grid-template-columns:1fr}.segrow{grid-template-columns:1fr}.segnote{margin-left:0}}
+
+/* lanes */
+.lh{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:baseline}
+.lh .desc{color:var(--muted);font-size:.88rem}
+.lh .status{margin-left:auto;font-size:.85rem;font-weight:600}
+.lane.tcp{border-top:3px solid var(--tcp)}.lane.udp{border-top:3px solid var(--udp)}
+.bufrow{display:grid;grid-template-columns:110px 1fr;gap:8px;align-items:center;margin-top:8px}
+.bl{font-size:.76rem;color:var(--muted);line-height:1.2}
+.cells{display:flex;gap:2px}
+.cell{flex:1 1 0;min-width:0;height:22px;border-radius:2px;border:1px solid var(--line);font:600 9px var(--mono);display:flex;align-items:center;justify-content:center;color:var(--muted);position:relative;overflow:hidden}
+.cell.flight{background:color-mix(in srgb,var(--lc) 30%,transparent);border-color:var(--lc);color:var(--ink)}
+.cell.acked{background:var(--ok);border-color:var(--ok);color:#fff}
+.cell.sent{background:var(--soft);color:var(--muted);text-decoration:line-through}
+.cell.retx{box-shadow:inset 0 -3px 0 var(--retx)}
+.cell.inwin{outline:2px solid var(--accent);outline-offset:1px;z-index:1}
+.cell.held{background:var(--held);border-color:var(--held);color:#222}
+.cell.deliv{background:var(--ok);border-color:var(--ok);color:#fff}
+.cell.lost{background:color-mix(in srgb,var(--loss) 22%,transparent);border-color:var(--loss);color:var(--loss)}
+.cell.frag{background:color-mix(in srgb,var(--frag) 30%,transparent);border-color:var(--frag);color:var(--ink)}
+svg.chan{display:block;width:100%;height:auto;margin-top:6px;touch-action:manipulation}
+.box{fill:var(--soft);stroke:var(--line)}
+.bt{font:600 12px var(--sans);fill:var(--ink)}
+.bs{font:10.5px var(--sans);fill:var(--muted)}
+.bm{font:10.5px var(--mono);fill:var(--ink)}
+.track{stroke:var(--line);stroke-width:2}
+.tl{font:10px var(--sans);fill:var(--muted)}
+.pk{cursor:pointer}
+.pk text{font:600 10px var(--mono);fill:#fff;pointer-events:none}
+.pk.ack rect{fill:var(--panel);stroke:var(--muted);stroke-width:1.2}
+.pk.ack text{fill:var(--ink)}
+.drop line{stroke:var(--loss);stroke-width:3;stroke-linecap:round}
+.lanefoot{display:grid;grid-template-columns:minmax(220px,300px) minmax(0,1fr) minmax(0,1.2fr);gap:14px;margin-top:12px;align-items:start}
+@media (max-width:980px){.lanefoot{grid-template-columns:1fr 1fr}.lanefoot .log{grid-column:1/-1}}
+@media (max-width:620px){.lanefoot{grid-template-columns:1fr}.bufrow{grid-template-columns:1fr}}
+figure{margin:0}
+figure canvas{display:block;width:100%;height:auto;border-radius:3px;border:1px solid var(--line)}
+figcaption{font-size:.76rem;color:var(--muted);margin-top:3px}
+dl.stats{margin:0;font-size:.8rem}
+dl.stats div{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);padding:3px 0}
+dl.stats dt{color:var(--muted)}dl.stats dd{margin:0;font-family:var(--mono);text-align:right}
+ol.log{list-style:none;margin:0;padding:0;font-size:.78rem;max-height:210px;overflow:auto}
+ol.log li{padding:3px 0;border-bottom:1px solid var(--line)}
+ol.log .tm{font-family:var(--mono);color:var(--muted);margin-right:6px}
+ol.log .loss{color:var(--loss)}ol.log .retx{color:var(--retx)}ol.log .good{color:var(--ok)}ol.log .you{color:var(--accent)}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.76rem;color:var(--muted);margin-top:8px}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--c);margin-right:5px;vertical-align:-1px}
+
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:820px){.charts{grid-template-columns:1fr}}
+.charts canvas{display:block;width:100%;height:auto}
+.take{margin:6px 0 0;padding-left:18px;font-size:.88rem;max-width:110ch}
+.take li{margin:4px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Reliable stream or best-effort datagrams? TCP and UDP over the same lossy path</h1>
+  <p class="sub">An app sends the same photo over TCP and over UDP. Both lanes cross an identical network: the same delay, the same bottleneck and the same packets lost on their first try. Watch TCP segment, acknowledge and retransmit, while UDP delivers whatever happens to arrive. Click any packet in flight to drop it.</p>
+</header>
+
+<section class="panel" aria-label="Simulation settings">
+  <div class="ctrls">
+    <label>Message size <output id="o-n"></output><input id="p-n" type="range" min="12" max="40" step="1" value="24"></label>
+    <label>Random loss <output id="o-loss"></output><input id="p-loss" type="range" min="0" max="30" step="1" value="8"></label>
+    <label>Round-trip time <output id="o-rtt"></output><input id="p-rtt" type="range" min="60" max="600" step="20" value="200"></label>
+    <label>Delay jitter (reorders packets) <output id="o-jit"></output><input id="p-jit" type="range" min="0" max="120" step="5" value="0"></label>
+    <label>TCP receive window <output id="o-win"></output><input id="p-win" type="range" min="2" max="16" step="1" value="8"></label>
+    <label>TCP initial cwnd <output id="o-iw"></output><input id="p-iw" type="range" min="1" max="10" step="1" value="2"></label>
+    <label>How the UDP app sends
+      <select id="p-mode"><option value="chunks">A datagram per 1460 B chunk</option><option value="one">One big datagram (IP fragments)</option></select></label>
+    <label>Always lose first try of segment #<input id="p-force" type="text" value="5" placeholder="e.g. 5, 9" aria-describedby="forcehint"></label>
+    <label>Loss pattern seed <input id="p-seed" type="number" value="7" min="1" max="9999"></label>
+    <label class="chk"><input id="p-hs" type="checkbox" checked> TCP three-way handshake first</label>
+    <label class="chk"><input id="p-ackloss" type="checkbox"> ACKs can be lost too</label>
+    <label>Playback speed <output id="o-spd"></output><input id="p-spd" type="range" min="0.05" max="0.8" step="0.05" value="0.2"></label>
+  </div>
+  <div class="btns">
+    <button id="run" class="primary">▶ Run</button>
+    <button id="reset">Reset</button>
+    <button id="reseed">New random losses</button>
+    <span class="hint" id="forcehint">Changing a setting resets the run. Space bar plays or pauses.</span>
+    <span class="clock" id="clock">t = 0 ms</span>
+  </div>
+</section>
+
+<section class="panel" aria-label="How the socket data is split">
+  <h3>From socket write to packets</h3>
+  <div id="seg"></div>
+  <div class="hdrs">
+    <div class="hdr" style="--c:var(--tcp)"><b style="font-size:.85rem">TCP header, 20 bytes (+ options)</b>
+      <div class="grid32"><div class="w2">Source port</div><div class="w2">Destination port</div><div class="w4">Sequence number (byte offset in the stream)</div><div class="w4">Acknowledgment number (next byte expected)</div><div class="w2">Offset · flags (SYN, ACK, FIN…)</div><div class="w2">Receive window</div><div class="w2">Checksum</div><div class="w2">Urgent pointer</div></div>
+      <p>Sequence and ACK numbers, the window and the flags are what make reliability, ordering and flow control possible.</p></div>
+    <div class="hdr" style="--c:var(--udp)"><b style="font-size:.85rem">UDP header, 8 bytes</b>
+      <div class="grid32"><div class="w2">Source port</div><div class="w2">Destination port</div><div class="w2">Length</div><div class="w2">Checksum</div></div>
+      <p>Only ports, a length and a checksum. No sequence numbers, no ACKs, no connection: anything more must be built by the application (as QUIC, RTP or DNS retries do).</p></div>
+  </div>
+</section>
+
+<section class="panel lane tcp" id="lane-tcp" style="--lc:var(--tcp)">
+  <div class="lh"><h2>TCP</h2><span class="desc">connection-oriented, reliable, ordered byte stream</span><span class="status" id="st-tcp"></span></div>
+  <div class="bufrow"><span class="bl">Send buffer<br>(kept until ACKed)</span><div class="cells" id="sb-tcp"></div></div>
+  <svg class="chan" id="ch-tcp" viewBox="0 0 1000 130" aria-label="TCP packets in flight; click one to drop it"></svg>
+  <div class="bufrow"><span class="bl">Receive buffer</span><div class="cells" id="rb-tcp"></div></div>
+  <div class="lanefoot">
+    <figure><canvas id="img-tcp" width="360" height="240"></canvas><figcaption>What the receiving app has read from the socket</figcaption></figure>
+    <dl class="stats" id="stats-tcp"></dl>
+    <ol class="log" id="log-tcp" aria-live="polite"></ol>
+  </div>
+</section>
+
+<section class="panel lane udp" id="lane-udp" style="--lc:var(--udp)">
+  <div class="lh"><h2>UDP</h2><span class="desc">connectionless, best-effort datagrams</span><span class="status" id="st-udp"></span></div>
+  <div class="bufrow"><span class="bl">Send side<br>(no copy kept)</span><div class="cells" id="sb-udp"></div></div>
+  <svg class="chan" id="ch-udp" viewBox="0 0 1000 130" aria-label="UDP packets in flight; click one to drop it"></svg>
+  <div class="bufrow"><span class="bl">Receive side</span><div class="cells" id="rb-udp"></div></div>
+  <div class="lanefoot">
+    <figure><canvas id="img-udp" width="360" height="240"></canvas><figcaption>What the receiving app has read from the socket</figcaption></figure>
+    <dl class="stats" id="stats-udp"></dl>
+    <ol class="log" id="log-udp" aria-live="polite"></ol>
+  </div>
+  <div class="legend">
+    <span style="--c:var(--tcp)">In flight (TCP)</span><span style="--c:var(--udp)">In flight (UDP)</span><span style="--c:var(--retx)">Retransmission</span><span style="--c:var(--ctl)">Handshake</span><span style="--c:var(--ok)">ACKed / delivered to app</span><span style="--c:var(--held)">Held: arrived out of order</span><span style="--c:var(--frag)">IP fragment waiting for reassembly</span><span style="--c:var(--loss)">Lost</span><span style="--c:transparent;outline:2px solid var(--accent)">TCP sending window</span>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="charts">
+    <div><h3>Data delivered to the receiving app</h3><canvas id="c-bytes" width="640" height="240"></canvas></div>
+    <div><h3>TCP congestion window</h3><canvas id="c-cwnd" width="640" height="240"></canvas></div>
+  </div>
+</section>
+
+<section class="panel">
+  <h3>What to notice</h3>
+  <ul class="take">
+    <li><b>Segmentation versus message boundaries.</b> TCP cuts the socket's byte stream into MSS-sized segments on its own; the app's write() boundaries are lost. UDP sends exactly what each sendto() hands it, so the app decides the chunking, and an oversized datagram is split by IP instead.</li>
+    <li><b>Loss detection.</b> TCP learns about loss from duplicate ACKs (fast retransmit, about one RTT) or from its retransmission timer (RTO, much slower and followed by cwnd = 1). UDP never finds out; the gap stays in the picture.</li>
+    <li><b>Head-of-line blocking.</b> Segments that arrive after a gap wait in TCP's receive buffer (yellow) until the missing one is retransmitted, so the app sees nothing new even though the data is already there. UDP hands every datagram up immediately, in whatever order it arrives.</li>
+    <li><b>Cost of reliability.</b> TCP spends a round trip on the handshake, sends ACKs, slows down after loss and resends data; UDP finishes sooner with less overhead, but incompletely.</li>
+    <li><b>Which to choose.</b> File transfer, web pages, SCADA configuration or firmware pushes need every byte: TCP (or QUIC). Voice, video and fast periodic telemetry often prefer fresh data over late data: UDP with application-level handling. One lost IP fragment destroys an entire large UDP datagram.</li>
+  </ul>
+  <p class="hint" style="margin-top:10px">Model simplifications: TCP follows Reno/NewReno without SACK, ACKs every segment, and uses a shortened RTO (RFC 6298 recommends a 1 s minimum). Handshake packets are never lost. The IP reassembly timeout is shortened for the demo (real stacks wait around 30 s). Bottleneck: one 1,500-byte packet every 16 ms (≈ 0.75 Mb/s).</p>
+</section>
+</div>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const MSS=1460, TX=16;
+let P, S, speed=0.2, last=performance.now(), scene=null;
+
+// ---------- parameters ----------
+const PARAMS=[['n',v=>v+' segments'],['loss',v=>v+' %'],['rtt',v=>v+' ms'],['jit',v=>'0–'+v+' ms'],['win',v=>v+' segments'],['iw',v=>v+(v==1?' segment':' segments')],['spd',v=>'1 s = '+Math.round(v*1000)+' ms sim']];
+function readParams(){
+  PARAMS.forEach(([k,f])=>$('#o-'+k).textContent=f(+$('#p-'+k).value));
+  const N=+$('#p-n').value;
+  P={N,loss:+$('#p-loss').value/100,rtt:+$('#p-rtt').value,ow:+$('#p-rtt').value/2,jit:+$('#p-jit').value,rwnd:+$('#p-win').value,iw:+$('#p-iw').value,
+     mode:$('#p-mode').value,hs:$('#p-hs').checked,ackLoss:$('#p-ackloss').checked,seed:+$('#p-seed').value||1,
+     forced:new Set($('#p-force').value.split(/[^0-9]+/).filter(Boolean).map(x=>+x-1).filter(x=>x>=0&&x<N)),
+     total:(N-1)*MSS+760};
+  speed=+$('#p-spd').value;
+}
+function h(a,b,c){let x=Math.imul(a+1,374761393)^Math.imul(b+7,668265263)^Math.imul(c+3,2246822519)^Math.imul(P.seed,3266489917);
+  x=Math.imul(x^(x>>>15),2246822519);x=Math.imul(x^(x>>>13),3266489917);x^=x>>>16;return (x>>>0)/4294967296;}
+const segBytes=i=>i===P.N-1?760:MSS;
+const bytesOf=k=>k<=0?0:Math.min(k*MSS,P.total);
+const fmtN=n=>Math.round(n).toLocaleString('en-US');
+const seqOf=i=>fmtN(i*MSS+1);
+
+// ---------- event queue ----------
+function schedule(t,fn){const e={t,fn,k:S.k++};let lo=0,hi=S.ev.length;while(lo<hi){const m=(lo+hi)>>1;const q=S.ev[m];if(q.t<t||(q.t===t&&q.k<e.k))lo=m+1;else hi=m;}S.ev.splice(lo,0,e);}
+function log(L,msg,cls=''){L.log.unshift({t:S.t,msg,cls});if(L.log.length>80)L.log.pop();L.dirty=true;}
+function launch(L,p){
+  const dep=p.dir==='fwd'?Math.max(S.t,L.linkFree):S.t;
+  if(p.dir==='fwd')L.linkFree=dep+TX;
+  p.id=S.k++;p.t0=dep;p.t1=dep+P.ow+(p.jit||0);p.dropAt=.3+h(p.id,5,9)*.4;
+  L.pkts.push(p);
+  if(p.onDepart)schedule(dep,()=>p.onDepart());
+  if(p.lose){p.dropped=true;p.tDrop=p.t0+(p.t1-p.t0)*p.dropAt;
+    schedule(p.tDrop,()=>{log(L,`[network] ${p.desc} lost on the path`,'loss');L.netLost++;});}
+  else schedule(p.t1,()=>{if(!p.dropped)p.onArrive();});
+  return p;
+}
+
+// ---------- TCP ----------
+function mkTCP(){const N=P.N;return{kind:'tcp',pkts:[],linkFree:0,log:[],dirty:true,netLost:0,
+  base:0,next:0,cwnd:P.iw,ssthresh:64,dup:0,rec:false,recKind:'',recover:0,rto:2*P.rtt+P.rwnd*TX+60,timer:null,tok:0,timerStart:0,
+  attempts:Array(N).fill(0),sendSt:Array(N).fill('wait'),retxd:Array(N).fill(false),
+  rcvNext:0,got:Array(N).fill(false),rcvSt:Array(N).fill('none'),delivered:0,ackCount:0,ready:!P.hs,
+  series:[[0,0]],cw:[[0,P.iw]],marks:[],
+  st:{data:0,retx:0,fast:0,rto:0,acks:0,ackLost:0,ctl:0,first:null,done:null,acked:null,held:0,maxHeld:0}};}
+function tcpStart(L){
+  if(!P.hs){log(L,'Connection assumed open; sending data','');trySend(L);return;}
+  log(L,'connect(): SYN sent (1 RTT before any data can flow)','');L.st.ctl++;
+  launch(L,{kind:'ctl',dir:'fwd',label:'SYN',desc:'SYN',onArrive:()=>{
+    log(L,'Receiver: SYN received, replies SYN-ACK','');L.st.ctl++;
+    launch(L,{kind:'ctl',dir:'back',label:'SYN-ACK',desc:'SYN-ACK',onArrive:()=>{
+      log(L,'SYN-ACK received: connection established, data may flow','good');L.st.ctl++;
+      L.ready=true;launch(L,{kind:'ctl',dir:'fwd',label:'ACK',desc:'handshake ACK',onArrive:()=>{}});trySend(L);}});}});
+}
+function armTimer(L){const tok=++L.tok;L.timer=tok;L.timerStart=S.t;schedule(S.t+L.rto,()=>{if(L.timer===tok)onRTO(L);});}
+function sendSeg(L,seg,retx){
+  const a=L.attempts[seg]++;
+  const lose=(a===0&&P.forced.has(seg))||h(seg,a,1)<P.loss;
+  const jit=P.jit?h(seg,a,3)*P.jit:0;
+  launch(L,{kind:retx?'retx':'data',dir:'fwd',seg,label:(retx?'↻':'')+(seg+1),desc:`segment #${seg+1}${retx?' (retransmission)':''}`,lose,jit,onArrive:()=>tcpRecv(L,seg)});
+  L.st.data++;L.sendSt[seg]='flight';
+  if(retx){L.st.retx++;L.retxd[seg]=true;}
+  if(L.timer===null)armTimer(L);
+  L.dirty=true;
+}
+function trySend(L){
+  if(!L.ready)return;
+  while(L.next<P.N&&L.next-L.base<Math.min(Math.floor(L.cwnd),P.rwnd)){sendSeg(L,L.next,false);L.next++;}
+}
+function onRTO(L){
+  if(L.base>=P.N){L.timer=null;return;}
+  L.st.rto++;L.marks.push([S.t,'rto']);
+  L.ssthresh=Math.max(Math.floor((L.next-L.base)/2),2);L.cwnd=1;L.dup=0;L.rec=true;L.recKind='rto';L.recover=L.next;
+  L.rto=Math.min(L.rto*2,6000);
+  log(L,`RTO expired waiting for #${L.base+1}: retransmit it, cwnd → 1, ssthresh → ${L.ssthresh}, timer doubled to ${Math.round(L.rto)} ms`,'retx');
+  L.timer=null;sendSeg(L,L.base,true);L.cw.push([S.t,L.cwnd]);
+}
+function tcpRecv(L,seg){
+  if(L.got[seg]){log(L,`Receiver: duplicate #${seg+1} discarded, ACK repeated`,'');}
+  else{
+    L.got[seg]=true;
+    if(seg===L.rcvNext){
+      const from=L.rcvNext;
+      while(L.rcvNext<P.N&&L.got[L.rcvNext]){L.rcvSt[L.rcvNext]='deliv';L.rcvNext++;}
+      const n=L.rcvNext-from;L.delivered=L.rcvNext;L.st.held=Math.max(0,L.st.held-(n-1));
+      if(L.st.first===null)L.st.first=S.t;
+      L.series.push([S.t,bytesOf(L.delivered)]);
+      log(L,n>1?`Receiver: #${seg+1} fills the gap, #${from+1}–#${L.rcvNext} released to the app at once`:`Receiver: #${seg+1} in order, delivered to app`,n>1?'good':'');
+      if(L.rcvNext===P.N&&L.st.done===null){L.st.done=S.t;log(L,`App has the complete message, in order (${fmtN(P.total)} bytes)`,'good');}
+    }else if(seg>L.rcvNext){
+      L.rcvSt[seg]='held';L.st.held++;L.st.maxHeld=Math.max(L.st.maxHeld,L.st.held);
+      log(L,`Receiver: #${seg+1} arrived out of order, held; app still waits for #${L.rcvNext+1}`,'');
+    }
+  }
+  const ackNo=L.rcvNext,ai=L.ackCount++;
+  const lose=P.ackLoss&&h(ai,11,2)<P.loss;
+  L.st.acks++;if(lose)L.st.ackLost++;
+  launch(L,{kind:'ack',dir:'back',label:ackNo<P.N?'ACK '+(ackNo+1):'ACK end',desc:`ACK ${ackNo+1}`,lose,onArrive:()=>tcpAck(L,ackNo)});
+  L.dirty=true;
+}
+function tcpAck(L,a){
+  if(a>L.base){
+    const newly=a-L.base;
+    for(let i=L.base;i<a;i++)L.sendSt[i]='acked';
+    L.base=a;L.dup=0;
+    if(L.rec){
+      if(a>=L.recover){L.rec=false;if(L.recKind==='fast')L.cwnd=L.ssthresh;log(L,`ACK ${a+1}: recovery complete, cwnd = ${L.cwnd.toFixed(1)}`,'good');}
+      else{log(L,`Partial ACK ${a+1}: another hole, retransmit #${a+1} now`,'retx');L.timer=null;sendSeg(L,a,true);}
+    }
+    if(!L.rec||L.recKind==='rto'){
+      L.cwnd=L.cwnd<L.ssthresh?L.cwnd+newly:L.cwnd+newly/L.cwnd;
+      L.cwnd=Math.min(L.cwnd,P.rwnd);
+    }
+    if(L.base>=P.N){L.timer=null;if(L.st.acked===null){L.st.acked=S.t;log(L,'Sender: every byte acknowledged, send buffer empty','good');}}
+    else if(L.base<L.next){L.timer=null;armTimer(L);} else L.timer=null;
+  }else if(a===L.base&&L.next>L.base){
+    L.dup++;
+    log(L,`Duplicate ACK ${a+1} (${L.dup}): receiver still missing #${a+1}`,'');
+    if(L.dup===3&&!L.rec){
+      L.st.fast++;L.marks.push([S.t,'fast']);
+      L.ssthresh=Math.max(Math.floor((L.next-L.base)/2),2);L.cwnd=L.ssthresh;L.rec=true;L.recKind='fast';L.recover=L.next;
+      log(L,`3 duplicate ACKs: fast retransmit #${a+1}, cwnd halved to ${L.cwnd}`,'retx');
+      L.timer=null;sendSeg(L,L.base,true);
+    }
+  }
+  L.cw.push([S.t,L.cwnd]);
+  trySend(L);L.dirty=true;
+}
+
+// ---------- UDP ----------
+function mkUDP(){const N=P.N;return{kind:'udp',pkts:[],linkFree:0,log:[],dirty:true,netLost:0,
+  sendSt:Array(N).fill('wait'),rcvSt:Array(N).fill('none'),got:Array(N).fill(false),delivered:0,dBytes:0,maxSeen:-1,frags:0,fin:false,reasm:null,
+  series:[[0,0]],st:{data:0,first:null,done:null,lastArr:null,ooo:0,lost:0,discard:false}};}
+function udpStart(L){
+  const one=P.mode==='one';
+  log(L,one?`sendto() once with ${fmtN(P.total)} bytes: larger than the 1500-byte MTU, so IP splits it into ${P.N} fragments`
+           :`sendto() called ${P.N} times, one datagram each; no handshake, sending starts immediately`,'');
+  let lastT1=0;
+  for(let seg=0;seg<P.N;seg++){
+    const lose=P.forced.has(seg)||h(seg,0,1)<P.loss, jit=P.jit?h(seg,0,3)*P.jit:0;
+    const p=launch(L,{kind:'data',dir:'fwd',seg,label:(one?'F':'')+(seg+1),desc:one?`fragment ${seg+1}`:`datagram #${seg+1}`,lose,jit,
+      onDepart:()=>{L.sendSt[seg]='sent';L.dirty=true;},onArrive:()=>udpRecv(L,seg)});
+    L.st.data++;lastT1=Math.max(lastT1,p.t1);
+  }
+  schedule(lastT1+1,()=>udpFinish(L));
+}
+function udpRecv(L,seg){
+  L.got[seg]=true;L.st.lastArr=S.t;
+  if(P.mode==='one'){
+    L.frags++;L.rcvSt[seg]='frag';
+    if(L.frags===1){const tok=L.reasm=S.k;schedule(S.t+Math.max(3*P.rtt,500),()=>{if(L.reasm===tok&&L.frags<P.N)udpDiscard(L);});
+      log(L,`IP: first fragment arrived, reassembly timer started`,'');}
+    if(L.frags===P.N){
+      L.reasm=null;for(let i=0;i<P.N;i++)L.rcvSt[i]='deliv';L.delivered=P.N;L.dBytes=P.total;
+      L.st.first=L.st.done=S.t;L.series.push([S.t,P.total]);L.fin=true;
+      log(L,'IP: all fragments present, datagram reassembled and delivered to the app','good');
+    }
+  }else{
+    L.rcvSt[seg]='deliv';L.delivered++;L.dBytes+=segBytes(seg);
+    if(L.st.first===null)L.st.first=S.t;
+    if(seg<L.maxSeen){L.st.ooo++;log(L,`#${seg+1} arrived out of order; delivered anyway (app must sort it out)`,'');}
+    else log(L,`#${seg+1} delivered to app`,'');
+    L.maxSeen=Math.max(L.maxSeen,seg);L.series.push([S.t,L.dBytes]);
+  }
+  L.dirty=true;
+}
+function udpDiscard(L){
+  for(let i=0;i<P.N;i++)L.rcvSt[i]='lost';
+  L.st.discard=true;L.st.done=S.t;L.fin=true;L.st.lost=P.N-L.frags;
+  log(L,`IP: reassembly timed out with ${P.N-L.frags} fragment(s) missing; all ${L.frags} received fragments discarded, the app gets nothing`,'loss');
+  L.dirty=true;
+}
+function udpFinish(L){
+  if(P.mode==='one'){if(L.frags===0)udpDiscard(L);return;}
+  let lost=0;for(let i=0;i<P.N;i++)if(!L.got[i]){L.rcvSt[i]='lost';lost++;}
+  L.st.lost=lost;L.st.done=L.st.lastArr;L.fin=true;
+  log(L,lost?`Sender finished long ago. ${lost} datagram(s) never arrived, and neither side was told`:'All datagrams happened to arrive',lost?'loss':'good');
+  L.dirty=true;
+}
+
+// ---------- rendering ----------
+const X0=160,X1=840,PW=44;
+function drawChan(L){
+  const tcp=L.kind==='tcp',el=$('#ch-'+L.kind);
+  let h=`<rect class="box" x="4" y="8" width="150" height="114" rx="4"/><rect class="box" x="846" y="8" width="150" height="114" rx="4"/>
+  <line class="track" x1="${X0}" y1="42" x2="${X1}" y2="42"/><line class="track" x1="${X0}" y1="92" x2="${X1}" y2="92" ${tcp?'':'stroke-dasharray="4 5"'}/>
+  <text class="tl" x="${X0+4}" y="28">data →</text><text class="tl" x="${X1-4}" y="112" text-anchor="end">${tcp?'← ACKs':'no ACKs, no feedback to the sender'}</text>
+  <text class="bt" x="14" y="28">${tcp?'TCP sender':'UDP sender'}</text><text class="bt" x="856" y="28">Receiver</text>`;
+  const queued=L.pkts.filter(p=>p.dir==='fwd'&&S.t<p.t0).length;
+  if(tcp){
+    h+=`<text class="bm" x="14" y="48">cwnd ${L.cwnd.toFixed(1)}</text><text class="bm" x="14" y="63">ssthresh ${L.ssthresh>=64?'∞':L.ssthresh}</text><text class="bm" x="14" y="78">queued ${queued}</text>`;
+    const f=L.timer!==null?Math.min(1,(S.t-L.timerStart)/L.rto):0;
+    h+=`<text class="bs" x="14" y="98">RTO timer ${L.timer!==null?Math.round(L.rto)+' ms':'idle'}</text><rect x="14" y="104" width="130" height="7" rx="3" fill="var(--line)"/><rect x="14" y="104" width="${(130*f).toFixed(1)}" height="7" rx="3" fill="${f>.75?'var(--loss)':'var(--accent)'}"/>`;
+    h+=`<text class="bm" x="856" y="48">${L.rcvNext>=P.N?'complete':'expects #'+(L.rcvNext+1)}</text><text class="bm" x="856" y="63">held ${L.st.held}</text><text class="bm" x="856" y="78">to app ${L.delivered}/${P.N}</text>`;
+  }else{
+    h+=`<text class="bs" x="14" y="48">no window</text><text class="bs" x="14" y="63">no timer, no resend</text><text class="bm" x="14" y="82">queued ${queued}</text><text class="bs" x="14" y="104">sends at line rate</text>`;
+    h+=P.mode==='one'?`<text class="bm" x="856" y="48">fragments ${L.frags}/${P.N}</text><text class="bs" x="856" y="66">IP holds them until</text><text class="bs" x="856" y="80">all have arrived</text>`
+                     :`<text class="bm" x="856" y="48">to app ${L.delivered}/${P.N}</text><text class="bs" x="856" y="66">delivers each one</text><text class="bs" x="856" y="80">as it arrives</text>`;
+  }
+  L.pkts=L.pkts.filter(p=>p.dropped?S.t<p.tDrop+700:S.t<p.t1);
+  for(const p of L.pkts){
+    if(S.t<p.t0)continue;
+    let f=(S.t-p.t0)/(p.t1-p.t0);if(p.dropped)f=Math.min(f,p.dropAt);
+    const fwd=p.dir==='fwd',x=fwd?X0+PW/2+(X1-X0-PW)*f:X1-PW/2-(X1-X0-PW)*f,y=fwd?42:92;
+    const col=p.kind==='retx'?'var(--retx)':p.kind==='ctl'?'var(--ctl)':p.kind==='ack'?'':tcp?'var(--tcp)':(P.mode==='one'?'var(--frag)':'var(--udp)');
+    const op=p.dropped&&S.t>p.tDrop?Math.max(0,1-(S.t-p.tDrop)/700):1;
+    const w=p.kind==='ack'||p.label.length>4?54:PW,hh=p.kind==='ack'?16:20;
+    h+=`<g class="pk ${p.kind==='ack'?'ack':''}" data-id="${p.id}" opacity="${op.toFixed(2)}"><rect x="${(x-w/2).toFixed(1)}" y="${y-hh/2}" width="${w}" height="${hh}" rx="3" ${col?`fill="${col}"`:''}/><text x="${x.toFixed(1)}" y="${y+3.5}" text-anchor="middle">${p.label}</text>`;
+    if(p.dropped&&S.t>=p.tDrop)h+=`<g class="drop"><line x1="${x-12}" y1="${y-12}" x2="${x+12}" y2="${y+12}"/><line x1="${x+12}" y1="${y-12}" x2="${x-12}" y2="${y+12}"/></g>`;
+    h+='</g>';
+  }
+  el.innerHTML=h;
+}
+function drawCells(L){
+  const tcp=L.kind==='tcp';
+  let s='';
+  for(let i=0;i<P.N;i++){let c=L.sendSt[i];if(tcp&&L.retxd[i])c+=' retx';
+    if(tcp&&L.ready&&i>=L.base&&i<L.base+Math.min(Math.floor(L.cwnd),P.rwnd))c+=' inwin';
+    s+=`<div class="cell ${c}" title="#${i+1}, seq ${seqOf(i)}">${i+1}</div>`;}
+  $('#sb-'+L.kind).innerHTML=s;s='';
+  for(let i=0;i<P.N;i++){const c=L.rcvSt[i];s+=`<div class="cell ${c}">${c==='lost'?'×':i+1}</div>`;}
+  $('#rb-'+L.kind).innerHTML=s;
+}
+const fmtT=t=>t===null?'–':fmtN(t)+' ms';
+function drawStats(L){
+  let rows;
+  if(L.kind==='tcp'){
+    const pk=L.st.data+L.st.acks+L.st.ctl;
+    rows=[['First byte reaches the app',fmtT(L.st.first)],['Whole message at the app',fmtT(L.st.done)],
+      ['Data segments sent',`${L.st.data} (${L.st.retx} resent)`],['Fast retransmits / timeouts',`${L.st.fast} / ${L.st.rto}`],
+      ['ACKs sent'+(P.ackLoss?' (lost)':''),P.ackLoss?`${L.st.acks} (${L.st.ackLost})`:L.st.acks],['Most segments held at once',L.st.maxHeld],
+      ['Header bytes (IP + TCP, all packets)',fmtN(pk*40)],['Delivered to app',`${fmtN(bytesOf(L.delivered))} B (${Math.round(100*bytesOf(L.delivered)/P.total)} %)`]];
+    const st=L.st.done!==null?`Complete: 100 % in order at ${fmtN(L.st.done)} ms`:L.ready?`Transferring: ${L.delivered}/${P.N} segments at the app`:'Handshaking…';
+    $('#st-tcp').textContent=st;$('#st-tcp').style.color=L.st.done!==null?'var(--ok)':'';
+  }else{
+    const one=P.mode==='one',hb=one?28+20*(P.N-1):28*P.N;
+    rows=[['First byte reaches the app',fmtT(L.st.first)],['Last datagram arrived',fmtT(L.st.lastArr)],
+      [one?'IP fragments sent':'Datagrams sent',L.st.data],[one?'Fragments lost':'Datagrams lost (never known)',L.fin?L.st.lost:'…'],
+      ['Arrived out of order',L.st.ooo],['Resent',0],
+      ['Header bytes (IP + UDP)',fmtN(hb)],['Delivered to app',`${fmtN(L.dBytes)} B (${Math.round(100*L.dBytes/P.total)} %)`]];
+    const st=!L.fin?(one?`Fragments arriving: ${L.frags}/${P.N}`:`Receiving: ${L.delivered}/${P.N} datagrams`)
+      :L.st.discard?'Failed: whole datagram discarded, 0 % delivered'
+      :`Finished at ${fmtN(L.st.done)} ms: ${Math.round(100*L.dBytes/P.total)} % delivered${L.st.lost?', gaps remain':''}`;
+    $('#st-udp').textContent=st;$('#st-udp').style.color=L.fin?(L.st.lost||L.st.discard?'var(--loss)':'var(--ok)'):'';
+  }
+  $('#stats-'+L.kind).innerHTML=rows.map(([a,b])=>`<div><dt>${a}</dt><dd>${b}</dd></div>`).join('');
+  $('#log-'+L.kind).innerHTML=L.log.slice(0,30).map(e=>`<li class="${e.cls}"><span class="tm">${fmtN(e.t)} ms</span>${e.msg}</li>`).join('');
+}
+function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
+function makeScene(){
+  const c=document.createElement('canvas');c.width=360;c.height=240;const g=c.getContext('2d'),W=360,H=240;
+  const sky=g.createLinearGradient(0,0,0,H);sky.addColorStop(0,'#6fa8dc');sky.addColorStop(.62,'#f6d6a8');sky.addColorStop(1,'#f6d6a8');g.fillStyle=sky;g.fillRect(0,0,W,H);
+  g.fillStyle='#ffd35a';g.beginPath();g.arc(282,70,24,0,Math.PI*2);g.fill();
+  g.fillStyle='#7d95b8';g.beginPath();g.moveTo(0,150);g.lineTo(60,95);g.lineTo(115,140);g.lineTo(185,80);g.lineTo(260,145);g.lineTo(320,105);g.lineTo(360,130);g.lineTo(360,240);g.lineTo(0,240);g.fill();
+  g.fillStyle='#5b8a5e';g.beginPath();g.moveTo(0,175);g.quadraticCurveTo(120,140,220,170);g.quadraticCurveTo(300,190,360,165);g.lineTo(360,240);g.lineTo(0,240);g.fill();
+  g.fillStyle='#46704a';g.fillRect(0,205,W,35);
+  const tower=(x,base,ht)=>{g.strokeStyle='#2b2f36';g.lineWidth=2;const top=base-ht;
+    g.beginPath();g.moveTo(x-14,base);g.lineTo(x-3,top);g.lineTo(x+3,top);g.lineTo(x+14,base);g.stroke();
+    g.lineWidth=1;g.beginPath();for(let k=0;k<5;k++){const y1=base-ht*k/5,y2=base-ht*(k+1)/5,w1=14-11*k/5,w2=14-11*(k+1)/5;g.moveTo(x-w1,y1);g.lineTo(x+w2,y2);g.moveTo(x+w1,y1);g.lineTo(x-w2,y2);}g.stroke();
+    g.lineWidth=2;g.beginPath();g.moveTo(x-18,top+14);g.lineTo(x+18,top+14);g.moveTo(x-13,top+26);g.lineTo(x+13,top+26);g.stroke();return[x,top+14];};
+  const ts=[tower(50,215,100),tower(175,200,78),tower(300,190,62)];
+  g.strokeStyle='#2b2f36';g.lineWidth=1.2;
+  [-18,18].forEach(dx=>{for(let i=0;i<2;i++){const[a,b]=ts[i],[c2,d]=ts[i+1];g.beginPath();g.moveTo(a+dx,b);g.quadraticCurveTo((a+c2)/2+dx,Math.max(b,d)+22,c2+dx*.8,d);g.stroke();}});
+  return c;
+}
+function drawImg(L){
+  const cv=$('#img-'+L.kind),g=cv.getContext('2d'),W=cv.width,H=cv.height,cols=6,rows=Math.ceil(P.N/cols),tw=W/cols,th=H/rows;
+  g.fillStyle=css('--soft');g.fillRect(0,0,W,H);
+  g.strokeStyle=css('--line');g.lineWidth=1;for(let x=-H;x<W;x+=10){g.beginPath();g.moveTo(x,H);g.lineTo(x+H,0);g.stroke();}
+  for(let i=0;i<P.N;i++){const x=(i%cols)*tw,y=Math.floor(i/cols)*th,st=L.rcvSt[i];
+    if(st==='deliv'){g.globalAlpha=1;g.drawImage(scene,x/W*360,y/H*240,tw/W*360,th/H*240,x,y,tw,th);}
+    else if(st==='held'||st==='frag'){g.globalAlpha=.28;g.drawImage(scene,x/W*360,y/H*240,tw/W*360,th/H*240,x,y,tw,th);g.globalAlpha=1;
+      g.fillStyle=st==='held'?css('--held'):css('--frag');g.font='600 11px '+css('--sans');g.textAlign='center';g.fillText(st==='held'?'held':'frag',x+tw/2,y+th/2+4);}
+    else if(st==='lost'){g.globalAlpha=1;g.fillStyle='rgba(224,49,49,.18)';g.fillRect(x,y,tw,th);g.strokeStyle=css('--loss');g.lineWidth=2;
+      g.beginPath();g.moveTo(x+tw*.3,y+th*.3);g.lineTo(x+tw*.7,y+th*.7);g.moveTo(x+tw*.7,y+th*.3);g.lineTo(x+tw*.3,y+th*.7);g.stroke();}
+    g.globalAlpha=1;
+  }
+}
+function chartFrame(g,W,H,tmax,ymax,ylab,yfmt){
+  g.clearRect(0,0,W,H);const L=52,R=12,T=12,B=30;
+  g.strokeStyle=css('--line');g.fillStyle=css('--muted');g.font='11px '+css('--sans');g.lineWidth=1;
+  for(let k=0;k<=4;k++){const y=T+(H-T-B)*(1-k/4);g.beginPath();g.moveTo(L,y);g.lineTo(W-R,y);g.stroke();g.textAlign='right';g.fillText(yfmt(ymax*k/4),L-6,y+4);}
+  const step=[100,200,250,500,1000,2000,5000].find(s=>tmax/s<=6)||10000;
+  g.textAlign='center';for(let t=0;t<=tmax;t+=step){const x=L+(W-L-R)*t/tmax;g.fillText(t+' ms',x,H-10);}
+  return{x:t=>L+(W-L-R)*t/tmax,y:v=>T+(H-T-B)*(1-v/ymax)};
+}
+function stepLine(g,m,pts,tEnd,col){if(!pts.length)return;g.strokeStyle=col;g.lineWidth=2.2;g.beginPath();g.moveTo(m.x(pts[0][0]),m.y(pts[0][1]));
+  for(let i=1;i<pts.length;i++){g.lineTo(m.x(pts[i][0]),m.y(pts[i-1][1]));g.lineTo(m.x(pts[i][0]),m.y(pts[i][1]));}
+  g.lineTo(m.x(tEnd),m.y(pts[pts.length-1][1]));g.stroke();}
+function drawCharts(){
+  const T=S.lanes.tcp,U=S.lanes.udp,tmax=Math.max(400,Math.ceil(S.t/200)*200);
+  let c=$('#c-bytes'),g=c.getContext('2d');
+  let m=chartFrame(g,c.width,c.height,tmax,100,'',v=>Math.round(v)+' %');
+  const pct=pts=>pts.map(([t,b])=>[t,100*b/P.total]);
+  stepLine(g,m,pct(U.series),S.t,css('--udp'));stepLine(g,m,pct(T.series),S.t,css('--tcp'));
+  g.font='600 11px '+css('--sans');g.textAlign='left';g.fillStyle=css('--tcp');g.fillText('TCP',60,24);g.fillStyle=css('--udp');g.fillText('UDP',96,24);
+  c=$('#c-cwnd');g=c.getContext('2d');
+  m=chartFrame(g,c.width,c.height,tmax,P.rwnd+1,'',v=>v.toFixed(v%1?1:0));
+  g.setLineDash([4,4]);g.strokeStyle=css('--muted');g.beginPath();g.moveTo(m.x(0),m.y(P.rwnd));g.lineTo(m.x(tmax),m.y(P.rwnd));g.stroke();g.setLineDash([]);
+  g.fillStyle=css('--muted');g.textAlign='right';g.fillText('receive window',m.x(tmax)-4,m.y(P.rwnd)-5);
+  stepLine(g,m,T.cw,S.t,css('--tcp'));
+  T.marks.forEach(([t,k])=>{g.fillStyle=k==='rto'?css('--loss'):css('--retx');g.beginPath();g.arc(m.x(t),m.y(0)-6,5,0,Math.PI*2);g.fill();});
+  g.textAlign='left';g.font='11px '+css('--sans');g.fillStyle=css('--retx');g.fillText('● fast retransmit',60,24);g.fillStyle=css('--loss');g.fillText('● timeout',170,24);
+}
+function renderSeg(){
+  const one=P.mode==='one';
+  const cells=(c,lab,cls='')=>`<div class="bar ${cls}">`+Array.from({length:P.N},(_,i)=>`<div style="--c:${c}" title="${lab(i)}">${P.N<=28?i+1:''}</div>`).join('')+'</div>';
+  $('#seg').innerHTML=
+   `<div class="segrow"><span class="who">App writes</span><div class="bar"><div style="--c:var(--muted);font-family:var(--sans)">photo.jpg, ${fmtN(P.total)} bytes written into the socket</div></div></div>
+    <div class="segrow"><span class="who" style="color:var(--tcp)">TCP segments</span>${cells('var(--tcp)',i=>`#${i+1}: bytes ${seqOf(i)}–${fmtN(i*MSS+segBytes(i))}`)}</div>
+    <p class="segnote">TCP treats the data as a byte stream and cuts it into ${P.N} segments of up to 1,460 bytes (MSS = 1500 MTU − 40). Each carries the sequence number of its first byte; a copy stays in the send buffer until it is acknowledged.</p>
+    <div class="segrow"><span class="who" style="color:var(--udp)">${one?'UDP → IP fragments':'UDP datagrams'}</span>${cells(one?'var(--frag)':'var(--udp)',i=>one?`fragment ${i+1} of one datagram`:`datagram #${i+1}`,one?'one':'')}</div>
+    <p class="segnote">${one?`The app hands UDP one ${fmtN(P.total)}-byte message. UDP keeps it whole, so IP must fragment it to fit the link MTU. The receiver's IP layer can only deliver it once every fragment is present.`
+      :`The app itself chops the photo into ${P.N} chunks and calls sendto() for each. Every datagram is independent: delivered whole, once, or not at all, with no ordering between them.`}</p>`;
+}
+function renderAll(){for(const L of Object.values(S.lanes)){drawChan(L);if(L.dirty){drawCells(L);drawStats(L);drawImg(L);L.dirty=false;}}
+  drawCharts();$('#clock').textContent='t = '+fmtN(S.t)+' ms';}
+
+// ---------- control ----------
+function reset(){
+  readParams();scene=scene||makeScene();
+  S={t:0,ev:[],k:0,running:false,started:false,finished:false,lanes:{}};
+  S.lanes.tcp=mkTCP();S.lanes.udp=mkUDP();
+  renderSeg();$('#run').textContent='▶ Run';renderAll();
+}
+function start(){
+  if(S.finished)reset();
+  if(!S.started){S.started=true;tcpStart(S.lanes.tcp);udpStart(S.lanes.udp);}
+  S.running=!S.running;$('#run').textContent=S.running?'❚❚ Pause':'▶ Resume';
+}
+function frame(now){
+  const dt=Math.min(now-last,100);last=now;
+  if(S.running){
+    const target=S.t+dt*speed;
+    while(S.ev.length&&S.ev[0].t<=target){const e=S.ev.shift();S.t=e.t;e.fn();}
+    S.t=target;
+    const T=S.lanes.tcp,U=S.lanes.udp;
+    if(T.base>=P.N&&U.fin&&!S.ev.some(e=>e.t<S.t+P.rtt*1.5)&&T.pkts.length===0&&U.pkts.length===0){
+      S.running=false;S.finished=true;$('#run').textContent='↺ Run again';
+    }
+  }
+  renderAll();requestAnimationFrame(frame);
+}
+function clickDrop(kind,ev){
+  const g=ev.target.closest('[data-id]');if(!g||!S.running&&!S.started)return;
+  const L=S.lanes[kind],p=L.pkts.find(q=>q.id===+g.dataset.id);
+  if(!p||p.dropped||S.t<p.t0||S.t>=p.t1)return;
+  p.dropped=true;p.tDrop=S.t;p.dropAt=(S.t-p.t0)/(p.t1-p.t0);
+  if(p.kind==='ack')L.st.ackLost++;
+  log(L,`[you] dropped ${p.desc}`,'you');L.netLost++;
+}
+['ch-tcp','ch-udp'].forEach(id=>$('#'+id).addEventListener('pointerdown',e=>clickDrop(id.slice(3),e)));
+$('#run').onclick=start;$('#reset').onclick=reset;
+$('#reseed').onclick=()=>{$('#p-seed').value=(+$('#p-seed').value%9999)+1;reset();};
+document.querySelectorAll('.ctrls input,.ctrls select').forEach(el=>el.addEventListener(el.type==='range'?'input':'change',()=>{
+  if(el.id==='p-spd'){readParamsSpeed();return;}reset();}));
+function readParamsSpeed(){speed=+$('#p-spd').value;$('#o-spd').textContent='1 s = '+Math.round(speed*1000)+' ms sim';}
+document.addEventListener('keydown',e=>{if(e.key===' '&&!/INPUT|SELECT|BUTTON/.test(e.target.tagName)){e.preventDefault();start();}});
+reset();requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
