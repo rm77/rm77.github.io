@@ -53,6 +53,8 @@ code,.mono{font-family:var(--mono);font-size:.86em}
 .controls{display:flex;flex-wrap:wrap;gap:10px}
 .group{display:flex;flex-wrap:wrap;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--soft);border-radius:10px;padding:8px 10px}
 .gl{font-size:13px;color:var(--muted)}
+select{max-width:100%}
+.group{min-width:0;max-width:100%}
 button,select,input{font:inherit;font-size:14px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:6px 11px}
 button{cursor:pointer}
 button:hover:not(:disabled),select:hover{border-color:var(--muted)}
@@ -137,13 +139,12 @@ td.m{font-family:var(--mono);font-size:12.5px}
 .sw{display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--c);margin-right:6px;vertical-align:-1px}
 .side{display:grid;gap:16px}
 .ptables{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
-.ptab{border:2px solid var(--c);border-radius:9px;padding:6px 8px}
+.ptab{border:2px solid var(--c);border-radius:9px;padding:6px 8px;min-width:0;overflow-x:auto}
 .ptab h4{margin:0 0 4px;font-size:14px;color:var(--c)}
 .ptab h4 small{color:var(--muted);font-weight:400}
 .empty{color:var(--muted);font-style:italic;font-size:14px}
 .blist{display:flex;flex-wrap:wrap;gap:4px}
 .blist span{font-family:var(--mono);font-size:12px;background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:1px 6px}
-
 
 /* translation */
 .tform{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
@@ -183,6 +184,91 @@ td.m{font-family:var(--mono);font-size:12.5px}
 .rel dd.diff{color:var(--warn);font-weight:600}
 .relnote{margin:12px 0 0;font-size:15px}
 @media (max-width:700px){.rel{grid-template-columns:minmax(0,1fr)}.rel .arrow{justify-self:center;transform:rotate(90deg)}}
+/* chart series tokens, validated for both themes */
+:root{--s1:#00897B;--s2:#7449C0}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--s1:#1FA898;--s2:#9A78E0}}
+:root[data-theme="dark"]{--s1:#1FA898;--s2:#9A78E0}
+
+/* OS-v4 additions */
+.rc.ws{box-shadow:inset 0 -3px 0 var(--hold)}
+.tlbt tr.tnow-hit td{background:var(--accentfill);font-weight:700}
+.tlbt tr.tnow-new td{background:var(--holdfill);font-weight:700}
+.wsline{margin:0 0 4px;font-size:12.5px;color:var(--muted)}
+.wsline b{color:var(--ink)}
+.ptcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.ptcards h2{font-size:15px}
+.big{font-size:28px;font-weight:700;line-height:1.1;margin:8px 0 6px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.ptcards p{margin:6px 0 0;font-size:14.5px}
+.fieldsw{overflow-x:auto}
+.fields{display:flex;gap:2px;margin:10px 0 2px}
+.fields span{flex-basis:0;min-width:26px;text-align:center;background:color-mix(in srgb,var(--accent) 16%,var(--panel));border:1px solid var(--line);border-radius:5px;padding:4px 6px;font-size:12px;color:var(--muted)}
+.fields span b{display:block;color:var(--ink);font-size:12.5px;white-space:nowrap}
+.fields span.off{background:var(--bg)}
+.split{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.split div{border:1px solid var(--line);border-radius:6px;padding:4px 8px;font-size:12.5px;min-width:0;background:var(--bg)}
+.split div b{display:block}
+.split div code{display:block;overflow-wrap:anywhere}
+.chartwrap{position:relative}
+.chart{display:block;width:100%;height:auto}
+.chart .grid{stroke:var(--soft);stroke-width:1}
+.chart .axis{stroke:var(--line);stroke-width:1}
+.chart text{font:12px var(--sans);fill:var(--muted)}
+.chart text.lab{fill:var(--ink);font-weight:700}
+.chart .band{fill:var(--warnfill);fill-opacity:.7}
+.chart .sel{stroke:var(--ink);stroke-width:1.5;stroke-dasharray:4 4}
+.chart .hit{fill:transparent;cursor:pointer}
+.legend2{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13.5px;margin-bottom:6px}
+.legend2 span{display:inline-flex;align-items:center;gap:6px}
+.legend2 svg{flex:none}
+.tip{position:absolute;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:13px;box-shadow:0 2px 10px color-mix(in srgb,var(--ink) 15%,transparent);white-space:nowrap}
+.kv{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0}
+.kv div{background:var(--bg);border-radius:8px;padding:6px 10px;font-size:12.5px;color:var(--muted)}
+.kv b{display:block;font-size:20px;color:var(--ink);font-variant-numeric:tabular-nums}
+.kv .bad b{color:var(--warn)}
+.cmp td.bad{color:var(--warn)}
+.tag2{font-size:11px;font-weight:700;border-radius:999px;padding:0 7px;margin-left:4px;background:var(--soft);color:var(--ink)}
+input[type=range]{width:160px;accent-color:var(--accent);padding:0;border:0;background:transparent}
+
+/* virtual memory tab */
+#vm,#pt,#thrash{display:grid;gap:14px}
+main>*,#vm>*,#pt>*,#thrash>*{min-width:0}
+.refs{display:flex;flex-wrap:wrap;gap:4px}
+.rc{display:inline-flex;flex-direction:column;align-items:center;min-width:38px;padding:2px 4px;border:1.5px solid var(--line);border-radius:6px;font-size:13px;background:var(--panel);font-variant-numeric:tabular-nums;line-height:1.25}
+.rc small{font-size:10px;color:var(--muted)}
+.rc b{color:var(--c);white-space:nowrap}
+.rc b sup{font-size:9.5px;color:var(--muted);font-weight:400}
+.rc i{font-style:normal;font-size:11px;font-weight:700;min-height:14px;color:var(--muted)}
+.rc.f{background:var(--warnfill);border-color:var(--warn)}
+.rc.f i{color:var(--warn)}
+.rc.h{background:var(--accentfill)}
+.rc.cur{outline:3px solid var(--ink);outline-offset:1px}
+.rc.next{border-style:dashed;border-color:var(--ink)}
+.vframes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.vf{border:1.5px solid var(--line);border-radius:8px;padding:6px 8px;min-height:86px;font-size:12.5px;display:flex;flex-direction:column;gap:1px;min-width:0;
+  background:repeating-linear-gradient(135deg,var(--bg) 0 7px,var(--soft) 7px 9px)}
+.vf.p{border-color:var(--c);background:color-mix(in srgb,var(--c) 14%,var(--panel))}
+.vf .fn{font-family:var(--mono);font-size:11px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:4px}
+.vf b{font-size:16px;color:var(--c)}
+.vf .ub{font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+.vf .ub .on{color:var(--ink);font-weight:600}
+.vf .meta{color:var(--muted);font-size:11.5px}
+.vf .ev{color:var(--warn);font-size:11.5px;font-weight:700}
+.vf.hitnow{outline:3px solid var(--accent);outline-offset:1px}
+.vf.faultnow{outline:3px solid var(--warn);outline-offset:1px}
+.hand{font:700 10.5px var(--sans);background:var(--hold);color:var(--panel);border-radius:999px;padding:0 6px}
+.vptw{display:grid;gap:12px}
+.side>*,.vptw>*{min-width:0}
+.vptw h4{margin:0 0 4px;font-size:14px;color:var(--c)}
+.vptw h4 small{color:var(--muted);font-weight:400}
+table.vpt{width:auto}
+table.vpt th,table.vpt td{padding:2px 5px;text-align:center;font-family:var(--mono);font-size:12px}
+table.vpt tr>th:first-child{text-align:left;font-family:var(--sans)}
+table.vpt td.na{color:var(--line)}
+table.vpt td.in{background:color-mix(in srgb,var(--c) 18%,var(--panel));font-weight:600}
+table.vpt .cur{box-shadow:inset 0 0 0 2px var(--ink)}
+.cmp td.anom{color:var(--warn);font-weight:700}
+.cmp td.on{box-shadow:inset 0 0 0 2px var(--ink)}
+@media (max-width:560px){.vframes{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (prefers-reduced-motion:no-preference){.blk,.fr{transition:left .45s ease,width .45s ease,background .3s}}
 </style>
 
@@ -190,14 +276,14 @@ td.m{font-family:var(--mono);font-size:12.5px}
   <header>
     <div>
       <h1>Memory Lab</h1>
-      <p>Load and free programs, then switch the memory model. The same history of loads and frees is replayed under each model, so you can see what each one wastes and what each one refuses to load. Swap a process out and back in to watch it move.</p>
+      <p>Load and free programs, then switch the memory model. The same history of loads and frees is replayed under each model, so you can see what each one wastes and what each one refuses to load. Swap a process out and back in to watch it move. The Virtual memory tab keeps only some pages of each process in RAM, with a TLB in front of the page tables. Page table sizes compares flat, multi-level and inverted tables, and Thrashing shows what happens when too many processes share too few frames.</p>
     </div>
     <div class="spec">Main memory <b>128 KB</b> · kernel <b>16 KB</b><br>Page size <b>4 KB</b> · 32 frames</div>
   </header>
 
   <div class="models" role="group" aria-label="Memory model" id="models"></div>
 
-  <div class="controls">
+  <div class="controls" id="mainControls">
     <div class="group">
       <span class="gl">Load</span>
       <select id="prog" aria-label="Program to load"></select>
@@ -227,12 +313,12 @@ td.m{font-family:var(--mono);font-size:12.5px}
     </div>
   </div>
 
-  <div class="card">
+  <div class="card" id="procCard">
     <div class="vhead"><h2>Processes</h2><p>Exit returns a process's memory. Swap out copies it to disk; swap in brings it back, wherever there is room. Waiting processes retry after every free.</p></div>
     <div class="plist" id="plist"></div>
   </div>
 
-  <div class="top">
+  <div class="top" id="topRow">
     <section class="card" aria-labelledby="memTitle">
       <div class="vhead"><h2 id="memTitle">Main memory</h2><p id="memSub"></p></div>
       <div id="memView"></div>
@@ -242,12 +328,12 @@ td.m{font-family:var(--mono);font-size:12.5px}
     <aside class="card side" id="side" aria-label="Operating system bookkeeping"></aside>
   </div>
 
-  <section class="card" aria-labelledby="relTitle">
+  <section class="card" id="relCard" aria-labelledby="relTitle">
     <div class="vhead"><h2 id="relTitle">Relocation</h2><p>Same program, same logical address, different place in memory</p></div>
     <div id="reloc"></div>
   </section>
 
-  <div class="mid">
+  <div class="mid" id="midRow">
     <section class="card" aria-labelledby="trTitle">
       <h2 id="trTitle">Address translation</h2>
       <div class="tform" id="tform"></div>
@@ -262,9 +348,169 @@ td.m{font-family:var(--mono);font-size:12.5px}
     </section>
   </div>
 
-  <section class="card">
+  <section class="card" id="logCard">
     <div class="vhead"><h2>What happened</h2><p>Newest first, for the current model</p></div>
     <ol id="log" reversed></ol>
+  </section>
+
+  <section id="vm" hidden aria-label="Virtual memory">
+    <div class="controls">
+      <div class="group">
+        <label class="gl" for="vmWork">Workload</label>
+        <select id="vmWork"></select>
+      </div>
+      <div class="group" id="vmCustomWrap" hidden>
+        <label class="gl" for="vmCustom">Pages</label>
+        <input id="vmCustom" style="width:26ch;max-width:100%" spellcheck="false" autocomplete="off">
+      </div>
+      <div class="group">
+        <label class="gl" for="vmFrames">Frames</label>
+        <select id="vmFrames"></select>
+        <label class="gl" for="vmPolicy">Replacement</label>
+        <select id="vmPolicy"></select>
+      </div>
+      <div class="group">
+        <label class="gl" for="vmTlb">TLB</label>
+        <select id="vmTlb"></select>
+        <label class="gl" for="vmDelta">Working set Δ</label>
+        <select id="vmDelta"></select>
+      </div>
+      <div class="group">
+        <button type="button" id="vmBack">Back</button>
+        <button type="button" class="primary" id="vmStep">Step</button>
+        <button type="button" id="vmRun">Run</button>
+        <button type="button" id="vmRestart">Restart</button>
+      </div>
+    </div>
+
+    <section class="card" aria-labelledby="vmRefTitle">
+      <div class="vhead"><h2 id="vmRefTitle">Memory accesses</h2><p id="vmDesc"></p></div>
+      <div class="refs" id="vmRefs"></div>
+      <p class="foot">Each box is one access: process and page, <sup>w</sup> for a write. After it runs, F marks a page fault, "TLB" a TLB hit and "hit" a page-table hit. A purple underline marks the working-set window: the last Δ accesses of the process that ran most recently.</p>
+    </section>
+
+    <div class="top">
+      <section class="card" aria-labelledby="vmMemTitle">
+        <div class="vhead"><h2 id="vmMemTitle">Physical memory</h2><p id="vmMemSub"></p></div>
+        <div class="vframes" id="vmFrameGrid"></div>
+        <div class="stats" id="vmStats"></div>
+        <h3 style="margin-top:16px">This access</h3>
+        <ol class="steps" id="vmSteps" aria-live="polite"></ol>
+      </section>
+      <aside class="card side" aria-label="TLB and page tables">
+        <div>
+          <h3>TLB</h3>
+          <div class="tw" id="vmTLB"></div>
+          <p class="foot">Entries are tagged with the process, so switching processes does not empty the TLB. When a page is evicted from RAM, its TLB entry is removed too. The least recently used entry is replaced.</p>
+        </div>
+        <div>
+          <h3>Page tables</h3>
+          <div class="vptw" id="vmPT"></div>
+          <p class="foot">P present in RAM · U use bit, set on every access · M modified (dirty), set on a write. A page with P = 0 is on disk. Dots mark pages the program does not use. W marks the working set W(t, Δ): the pages the process used in its last Δ accesses.</p>
+        </div>
+      </aside>
+    </div>
+
+    <section class="card" aria-labelledby="eatTitle">
+      <div class="vhead"><h2 id="eatTitle">Effective access time</h2><p>What the TLB and page faults do to the average memory access</p></div>
+      <div class="tform">
+        <label class="gl" for="eatMem">Memory access (ns)</label><input id="eatMem" type="number" min="1" step="1">
+        <label class="gl" for="eatTlb">TLB lookup (ns)</label><input id="eatTlb" type="number" min="0" step="1">
+        <label class="gl" for="eatHit">TLB hit rate (%)</label><input id="eatHit" type="number" min="0" max="100" step="0.1"><span class="gl" id="eatHitSrc"></span>
+        <label class="gl" for="eatFault">Page fault (ms)</label><input id="eatFault" type="number" min="0" step="0.5">
+      </div>
+      <div class="presets">
+        <button type="button" id="eatUseRun">Use this run's hit rate</button>
+        <button type="button" id="eatP812">Problem 8.12 values</button>
+      </div>
+      <ol class="steps" id="eatSteps"></ol>
+    </section>
+
+    <section class="card" aria-labelledby="vmCmpTitle">
+      <h2 id="vmCmpTitle">Same accesses, every policy</h2>
+      <p class="foot" style="margin:4px 0 10px">Total page faults for the whole sequence, by number of frames. The outlined cell is the current setting.</p>
+      <div class="tw"><table class="cmp" id="vmCmp"></table></div>
+      <p class="foot">These totals include the first faults that fill empty frames. Stallings counts only the faults after the frames are full, so subtract the number of frames to compare with Figure 8.14. ↑ marks more faults than with fewer frames: Belady's anomaly. It can happen with FIFO and Clock, never with LRU or OPT.</p>
+    </section>
+  </section>
+
+  <section id="pt" hidden aria-label="Page table sizes">
+    <div class="controls">
+      <div class="group">
+        <label class="gl" for="ptPreset">Example</label>
+        <select id="ptPreset"></select>
+      </div>
+      <div class="group">
+        <label class="gl" for="ptVA">Virtual address space</label>
+        <input id="ptVA" type="number" min="1" step="any" style="width:8ch">
+        <select id="ptVAu" aria-label="Virtual address space unit"></select>
+      </div>
+      <div class="group">
+        <label class="gl" for="ptPage">Page size</label>
+        <select id="ptPage"></select>
+        <label class="gl" for="ptPTE">Entry size</label>
+        <select id="ptPTE"></select>
+      </div>
+      <div class="group">
+        <label class="gl" for="ptRAM">Physical memory</label>
+        <input id="ptRAM" type="number" min="1" step="any" style="width:8ch">
+        <select id="ptRAMu" aria-label="Physical memory unit"></select>
+        <label class="gl" for="ptTLB">TLB entries</label>
+        <input id="ptTLB" type="number" min="1" step="1" style="width:7ch">
+      </div>
+    </div>
+    <div class="ptcards" id="ptCards"></div>
+    <section class="card" aria-labelledby="ptSplitTitle">
+      <div class="vhead"><h2 id="ptSplitTitle">Walk one address through the tables</h2><p id="ptSplitSub"></p></div>
+      <div class="tform"><label class="gl" for="ptAddr">Virtual address (hex)</label><input id="ptAddr" style="width:22ch" spellcheck="false" autocomplete="off"></div>
+      <div id="ptSplit"></div>
+    </section>
+    <section class="card" aria-labelledby="ptSizeTitle">
+      <h2 id="ptSizeTitle">Same address space, different page sizes</h2>
+      <p class="foot" style="margin:4px 0 10px">Bigger pages mean fewer entries and more TLB reach, but more memory wasted in the last page of each region. The highlighted row is the current page size.</p>
+      <div class="tw"><table class="cmp" id="ptSizes"></table></div>
+      <p class="foot">Internal waste assumes three regions per process (code, data, stack), each wasting half a page on average. TLB sizes are examples; real TLBs differ by processor.</p>
+    </section>
+  </section>
+
+  <section id="thrash" hidden aria-label="Thrashing">
+    <div class="controls">
+      <div class="group">
+        <label class="gl" for="thFrames">Frames for processes</label>
+        <select id="thFrames"></select>
+      </div>
+      <div class="group">
+        <label class="gl" for="thWS">Working set per process</label>
+        <select id="thWS"></select>
+      </div>
+      <div class="group">
+        <label class="gl" for="thDisk">Disk time per page fault</label>
+        <select id="thDisk"></select>
+      </div>
+      <div class="group">
+        <label class="gl" for="thN">Processes in memory</label>
+        <input id="thN" type="range" min="1" max="14" step="1">
+        <output id="thNout" for="thN"></output>
+      </div>
+    </div>
+    <div class="top">
+      <section class="card" aria-labelledby="thChartTitle">
+        <div class="vhead"><h2 id="thChartTitle">CPU and paging disk, by number of processes</h2><p>Click a point to select it</p></div>
+        <div class="legend2" id="thLegend"></div>
+        <div class="chartwrap" id="thChart"></div>
+      </section>
+      <aside class="card" aria-labelledby="thSelTitle">
+        <h2 id="thSelTitle">Selected level</h2>
+        <div class="kv" id="thKV"></div>
+        <p class="note" id="thNote" aria-live="polite"></p>
+      </aside>
+    </div>
+    <section class="card" aria-labelledby="thTabTitle">
+      <h2 id="thTabTitle">The numbers behind the chart</h2>
+      <p class="foot" style="margin:4px 0 10px">Each process gets an equal share of the frames and replaces its own pages with LRU. It also waits for ordinary I/O about every 300 accesses. The paging disk serves one fault at a time.</p>
+      <div class="tw"><table class="cmp" id="thTable"></table></div>
+      <p class="foot">L is the mean number of accesses between page faults; S is the disk time per fault. Denning's L = S criterion and the 50% criterion (paging disk busy about half the time) are rules of thumb for steering toward the peak without measuring CPU use. Compare their rows with the peak row. Time is counted in memory accesses: one access takes one unit.</p>
+    </section>
   </section>
 </main>
 
@@ -288,8 +534,12 @@ const MODELS = {
   dynamic: {name:"Dynamic partitions", sub:"exact size, contiguous"},
   buddy:   {name:"Buddy system", sub:"powers of two"},
   paging:  {name:"Paging", sub:"4 KB frames"},
-  seg:     {name:"Segmentation", sub:"code, data, stack"}
+  seg:     {name:"Segmentation", sub:"code, data, stack"},
+  vm:      {name:"Virtual memory", sub:"demand paging, TLB"},
+  pt:      {name:"Page table sizes", sub:"flat, multi-level, inverted"},
+  thrash:  {name:"Thrashing", sub:"load control"}
 };
+const SPECIAL = {vm:"#vm", pt:"#pt", thrash:"#thrash"};
 const FITNAME = {first:"First fit", best:"Best fit", next:"Next fit", worst:"Worst fit"};
 const FIXED = {equal:[28,28,28,28], unequal:[8,8,16,32,48]};
 
@@ -546,7 +796,6 @@ function simulate(model, opt){
   return st;
 }
 const opts = () => ({fit:ui.fit, fixedKind:ui.fixedKind});
-
 
 // ===================== rendering =====================
 function renderModels(){
@@ -831,7 +1080,7 @@ function renderReloc(st){
 
 // ===================== compare =====================
 function renderCompare(){
-  const rows = Object.keys(MODELS).map(k => ({k, s:simulate(k, opts()).stats}));
+  const rows = Object.keys(MODELS).filter(k => !SPECIAL[k]).map(k => ({k, s:simulate(k, opts()).stats}));
   const min = f => Math.min(...rows.map(r => f(r.s))), max = f => Math.max(...rows.map(r => f(r.s)));
   const cell = (r, f, fmt, good) => {
     const v = f(r.s), best = good === "low" ? min(f) : max(f), worst = good === "low" ? max(f) : min(f);
@@ -847,6 +1096,17 @@ function renderCompare(){
 // ===================== main render =====================
 let current = null;
 function render(){
+  const special = !!SPECIAL[ui.model];
+  for (const id of ["mainControls","procCard","topRow","relCard","midRow","logCard"]) $("#" + id).hidden = special;
+  for (const [k, sel] of Object.entries(SPECIAL)) $(sel).hidden = ui.model !== k;
+  if (ui.model !== "vm") vmStop();
+  if (special){
+    renderModels();
+    if (ui.model === "vm") renderVM();
+    else if (ui.model === "pt") renderPT();
+    else renderThrash();
+    return;
+  }
   current = simulate(ui.model, opts());
   renderModels(); renderProcs(current); renderTranslateForm(current);
   const tr = translate(current);
@@ -860,6 +1120,563 @@ function rerenderTranslation(){
   $("#steps").innerHTML = tr.steps.join("");
   renderMemory(current, tr); renderReloc(current);
 }
+
+// ===================== virtual memory =====================
+const VPAGES = 16, KFRAMES = OSK / PAGE;
+const vm = {preset:"programs", frames:8, policy:"lru", k:0, timer:null, tlb:4, delta:5,
+            custom:"7 0 1 2 0 3 0 4 2 3 0 3 2 1 2 0 1 7 0 1"};
+const POLICIES = {
+  opt:  {name:"OPT",   long:"optimal, knows the future"},
+  fifo: {name:"FIFO",  long:"oldest page out"},
+  lru:  {name:"LRU",   long:"least recently used out"},
+  clock:{name:"Clock", long:"FIFO with a second chance"}
+};
+const FR = i => i + KFRAMES;
+
+function refsFromString(str){
+  const refs = [];
+  for (const tok of String(str).trim().split(/[\s,]+/)){
+    const m = /^(\d{1,2})(w?)$/i.exec(tok);
+    if (!m || +m[1] >= VPAGES) continue;
+    const write = !!m[2];
+    refs.push({pi:0, page:+m[1], write, off:(refs.length * 0x1C4 + 0x40) & 0xFFC, what:write ? "writes to" : "reads"});
+  }
+  return {procs:[{name:"P", color:"var(--p1)", file:"reference string"}], refs};
+}
+function roundRobin(seqs, q){
+  const out = [], idx = seqs.map(() => 0);
+  while (idx.some((v, i) => v < seqs[i].length)){
+    seqs.forEach((sq, pi) => { for (let n = 0; n < q && idx[pi] < sq.length; n++) out.push(Object.assign({pi}, sq[idx[pi]++])); });
+  }
+  return out;
+}
+const VR = (page, write, off, what) => ({page, write, off, what});
+const FETCH = "fetches an instruction at";
+function seqSum(){
+  const q = [];
+  for (let i = 0; i < 4; i++) q.push(VR(0, false, 0x040 + i*0x10, FETCH), VR(4 + (i >> 1), false, 0x100 + i*0x200, "reads array data at"), VR(15, true, 0xFF8, "pushes onto the stack at"));
+  q.push(VR(1, false, 0x020, FETCH), VR(6, true, 0x000, "stores the total at"), VR(1, false, 0x030, FETCH));
+  return q;
+}
+function seqReadfile(){
+  const q = [VR(0, false, 0x000, FETCH), VR(15, true, 0xFF0, "pushes onto the stack at")];
+  for (let i = 0; i < 3; i++) q.push(VR(1, false, 0x100 + i*0x20, FETCH), VR(8, true, i*0x400, "fills the read buffer at"), VR(9, true, i*0x400, "fills the read buffer at"), VR(2, false, 0x040, FETCH), VR(8, false, i*0x400, "reads the buffer at"));
+  q.push(VR(15, false, 0xFF0, "pops from the stack at"));
+  return q;
+}
+function seqBigdata(passes, stack){
+  const q = [];
+  for (let pass = 0; pass < passes; pass++) for (let pg = 4; pg <= 9; pg++) q.push(VR(0, false, 0x080, FETCH), VR(pg, false, 0x010 + pass*0x40, "scans array data at"));
+  if (stack) q.push(VR(15, true, 0xFF8, "pushes onto the stack at"));
+  return q;
+}
+const VM_WORK = {
+  programs:{label:"Three programs, round robin", frames:8, cols:[3,4,5,6,8,10,12,16],
+    build:() => ({procs:[{name:"A", color:"var(--p0)", file:"./sum"}, {name:"B", color:"var(--p1)", file:"./readfile"}, {name:"C", color:"var(--p2)", file:"./bigdata"}],
+                  refs:roundRobin([seqSum(), seqReadfile(), seqBigdata(2, true)], 4)}),
+    desc:W => `A ./sum, B ./readfile and C ./bigdata take turns, four accesses each. Together they use ${uniquePages(W)} pages, more than fit in the frames.`},
+  loop:{label:"./bigdata alone: a loop bigger than memory", frames:6, cols:[3,4,5,6,7,8],
+    build:() => ({procs:[{name:"C", color:"var(--p2)", file:"./bigdata"}], refs:seqBigdata(3, false).map(r => Object.assign({pi:0}, r))}),
+    desc:() => "The program scans an array on pages 4 to 9 three times, fetching code from page 0 between reads. With 6 frames the loop needs 7 pages: LRU faults on every array page, OPT does far better."},
+  textbook:{label:"Stallings Figure 8.14: 2 3 2 1 5 2 4 5 3 2 5 2", frames:3, cols:[1,2,3,4,5,6],
+    build:() => refsFromString("2 3 2 1 5 2 4 5 3 2 5 2"),
+    desc:() => "The page address stream from Figure 8.14, with 3 frames. Step through it under each policy and compare the counts in the table."},
+  belady:{label:"Belady's anomaly: 1 2 3 4 1 2 5 1 2 3 4 5", frames:3, policy:"fifo", cols:[1,2,3,4,5,6],
+    build:() => refsFromString("1 2 3 4 1 2 5 1 2 3 4 5"),
+    desc:() => "Run it with FIFO and 3 frames, then 4 frames. Giving the process more memory produces more page faults."},
+  custom:{label:"Your own reference string", frames:3, cols:[1,2,3,4,5,6,7,8],
+    build:() => refsFromString(vm.custom),
+    desc:() => "Type page numbers 0 to 15, separated by spaces. Add w for a write, for example 3w."}
+};
+function uniquePages(W){ return new Set(W.refs.map(r => r.pi + ":" + r.page)).size; }
+const argmin = (arr, key) => arr.reduce((b, x, j) => key(x) < key(arr[b]) ? j : b, 0);
+function nextUse(refs, from, pi, page){
+  for (let j = from; j < refs.length; j++) if (refs[j].pi === pi && refs[j].page === page) return j;
+  return Infinity;
+}
+
+// Runs the first `upto` accesses. Free frames are filled lowest first; the clock hand points just past the last frame loaded.
+// tlbSize > 0 adds a TLB with that many entries, tagged by process, LRU replacement.
+function vmRun(W, nf, policy, upto, tlbSize = 0){
+  const refs = W.refs, frames = Array(nf).fill(null);
+  const pt = W.procs.map(() => Array.from({length:VPAGES}, () => ({p:0, f:-1, u:0, m:0})));
+  const tlb = Array(tlbSize).fill(null);
+  let hand = 0, faults = 0, writes = 0, tlbHits = 0;
+  const hist = [];
+  const tlbInsert = (r, f, i) => {
+    let j = tlb.indexOf(null), out = null;
+    if (j < 0){ j = argmin(tlb, x => x.last); out = tlb[j]; }
+    tlb[j] = {pi:r.pi, page:r.page, f, last:i};
+    return {slot:j, out};
+  };
+  for (let i = 0; i < upto; i++){
+    const r = refs[i], e = pt[r.pi][r.page];
+    let tl = null;
+    if (tlbSize){
+      const ti = tlb.findIndex(x => x && x.pi === r.pi && x.page === r.page);
+      if (ti >= 0){ tlb[ti].last = i; tlbHits++; tl = {kind:"hit", slot:ti}; }
+      else tl = {kind:"miss"};
+    }
+    if (e.p){
+      const fr = frames[e.f];
+      fr.last = i; fr.u = 1; e.u = 1;
+      if (r.write){ fr.m = 1; e.m = 1; }
+      if (tl && tl.kind === "miss") Object.assign(tl, tlbInsert(r, e.f, i));
+      hist.push({hit:true, f:e.f, tl});
+      continue;
+    }
+    faults++;
+    let f = frames.indexOf(null), victim = null;
+    const cleared = [], handStart = hand;
+    if (f < 0){
+      if (policy === "fifo") f = argmin(frames, x => x.loaded);
+      else if (policy === "lru") f = argmin(frames, x => x.last);
+      else if (policy === "opt"){
+        let best = -1, bn = -1;
+        frames.forEach((x, j) => { const n = nextUse(refs, i + 1, x.pi, x.page); if (n > bn || (n === bn && x.loaded < frames[best].loaded)){ bn = n; best = j; } });
+        f = best;
+      } else {
+        while (frames[hand].u){ frames[hand].u = 0; pt[frames[hand].pi][frames[hand].page].u = 0; cleared.push(hand); hand = (hand + 1) % nf; }
+        f = hand;
+      }
+      const v = frames[f], ve = pt[v.pi][v.page];
+      victim = {pi:v.pi, page:v.page, m:v.m, loaded:v.loaded, last:v.last, next:nextUse(refs, i + 1, v.pi, v.page), tlbDropped:false};
+      if (tlbSize){
+        const vi = tlb.findIndex(x => x && x.pi === v.pi && x.page === v.page);
+        if (vi >= 0){ tlb[vi] = null; victim.tlbDropped = true; }
+      }
+      if (v.m) writes++;
+      ve.p = 0; ve.f = -1; ve.u = 0; ve.m = 0;
+    }
+    frames[f] = {pi:r.pi, page:r.page, loaded:i, last:i, u:1, m:r.write ? 1 : 0};
+    e.p = 1; e.f = f; e.u = 1; e.m = r.write ? 1 : 0;
+    hand = (f + 1) % nf;
+    if (tl) Object.assign(tl, tlbInsert(r, f, i));
+    hist.push({hit:false, f, victim, cleared, handStart, tl});
+  }
+  return {frames, pt, hand, faults, writes, hist, n:upto, tlb, tlbHits};
+}
+function workingSet(W, upto, pi, delta){
+  const idx = [];
+  let t = 0;
+  for (let j = 0; j < upto; j++) if (W.refs[j].pi === pi) t++;
+  for (let j = upto - 1; j >= 0 && idx.length < delta; j--) if (W.refs[j].pi === pi) idx.push(j);
+  return {t, idx, pages:new Set(idx.map(j => W.refs[j].page))};
+}
+
+const vmPN = (W, pi, page) => W.procs.length > 1
+  ? `<b style="color:${W.procs[pi].color}">${W.procs[pi].name}</b>·p${page}`
+  : `page ${page}`;
+
+function vmExplain(W, S){
+  if (!W.refs.length) return [`<li class="fault"><span>No valid page numbers yet. Use numbers 0 to 15, like <span class="mono">1 2 3 1 4</span>.</span></li>`];
+  if (!S.n) return [`<li><span>Press <b>Step</b> to run the first access. Every page starts on disk, so the first access to each page is a page fault.</span></li>`];
+  const i = S.n - 1, r = W.refs[i], h = S.hist[i], P = W.procs[r.pi], va = r.page*4096 + r.off;
+  const who = `<b style="color:${P.color}">${P.name}</b>`, out = [], me = vmPN(W, r.pi, r.page);
+  const tlbCopy = tl => tl && tl.slot != null ? ` The entry is copied into TLB slot ${tl.slot}${tl.out ? `, replacing ${vmPN(W, tl.out.pi, tl.out.page)}, the least recently used entry` : ""}.` : "";
+  out.push(`<li><span>Access ${i + 1}: ${who} ${r.what} virtual address <span class="mono">${hex(va, 4)}</span>.<br>${bitsHTML(va, 16, 4, P.color)} = page <b>${r.page}</b>, offset <span class="mono">${hex(r.off, 3)}</span></span></li>`);
+  if (h.tl && h.tl.kind === "hit"){
+    out.push(`<li><span><b>TLB hit</b>: TLB slot ${h.tl.slot} already maps ${me} to frame ${FR(h.f)}, so the page table in memory is not read. The hardware sets the use bit${r.write ? " and, because this is a write, the modified bit" : ""}.</span></li>`);
+    out.push(`<li class="res"><span class="result">Physical address = frame ${FR(h.f)} followed by the offset = ${hex(FR(h.f)*4096 + r.off, 5)}</span></li>`);
+    return out;
+  }
+  if (h.tl) out.push(`<li><span><b>TLB miss</b>: no TLB entry for ${me}, so the hardware reads ${P.name}'s page table entry from memory. That is one extra memory access.</span></li>`);
+  if (h.hit){
+    out.push(`<li><span>${P.name}'s page table entry for page ${r.page}: P = 1, frame ${FR(h.f)}. <b>The page is in RAM</b>, so the disk is not touched. The hardware sets the use bit${r.write ? " and, because this is a write, the modified bit" : ""}.${tlbCopy(h.tl)}</span></li>`);
+    out.push(`<li class="res"><span class="result">Physical address = frame ${FR(h.f)} followed by the offset = ${hex(FR(h.f)*4096 + r.off, 5)}</span></li>`);
+    return out;
+  }
+  out.push(`<li class="fault"><span>${P.name}'s page table entry for page ${r.page}: P = 0, so the page is on disk. <b>Page fault</b>: the hardware traps to the OS, and ${P.name} is blocked until the page has been read in.</span></li>`);
+  if (!h.victim){
+    out.push(`<li><span>Frame ${FR(h.f)} is free, so nothing has to be evicted.</span></li>`);
+  } else {
+    const v = h.victim, vn = vmPN(W, v.pi, v.page);
+    let why = "";
+    if (vm.policy === "fifo") why = `FIFO evicts the page that has been in RAM longest: ${vn}, loaded at access ${v.loaded + 1}.`;
+    else if (vm.policy === "lru") why = `LRU evicts the page that has gone unused longest: ${vn}, last used at access ${v.last + 1}.`;
+    else if (vm.policy === "opt") why = `OPT evicts the page whose next use is furthest away: ${vn} ${v.next === Infinity ? "is never used again" : `is next used at access ${v.next + 1}`}. OPT has to know the future, so no real OS can run it; it is the yardstick for the others.`;
+    else why = `The clock hand was at frame ${FR(h.handStart)}. ${h.cleared.length === vm.frames ? "Every frame had its use bit set, so the hand went all the way round. " : ""}${h.cleared.length ? `It gave ${h.cleared.length === 1 ? "frame" : "frames"} ${h.cleared.map(FR).join(", ")} a second chance by clearing ${h.cleared.length === 1 ? "its use bit" : "their use bits"}, then stopped` : "It stopped right there"} at frame ${FR(h.f)}, whose use bit was 0, and evicts ${vn}.`;
+    out.push(`<li><span>Every frame is in use, so a page must be replaced. ${why}</span></li>`);
+    out.push(`<li${v.m ? ` class="fault"` : ""}><span>${v.m ? `${vn} was modified (M = 1), so it is <b>written back to disk</b> first: an extra disk write.` : `${vn} was not modified (M = 0). The copy on disk is still correct, so the frame is reused without writing it back.`} Its page table entry becomes P = 0.${v.tlbDropped ? " Its TLB entry is removed as well, so no stale translation is left behind." : ""}</span></li>`);
+  }
+  out.push(`<li><span>The OS reads page ${r.page} from disk into frame ${FR(h.f)} and updates ${P.name}'s page table: P = 1, frame ${FR(h.f)}, U = 1${r.write ? ", M = 1" : ""}.${tlbCopy(h.tl)} ${P.name} becomes ready again, and the instruction is restarted.</span></li>`);
+  out.push(`<li class="res"><span class="result">Restarted access: physical address = ${hex(FR(h.f)*4096 + r.off, 5)}</span></li>`);
+  return out;
+}
+
+function vmStop(){ if (vm.timer){ clearInterval(vm.timer); vm.timer = null; } }
+
+const eat = {mem:100, tlb:20, hit:null, fault:8};
+function fmtNs(x){
+  if (!Number.isFinite(x)) return "–";
+  if (x < 1000) return `${+x.toFixed(1)} ns`;
+  if (x < 1e6) return `${+(x / 1000).toFixed(2)} µs`;
+  return `${+(x / 1e6).toFixed(2)} ms`;
+}
+function setVal(id, v){ const el = $(id); if (document.activeElement !== el) el.value = v; }
+function renderEAT(S){
+  const measured = vm.tlb && S.n ? S.tlbHits / S.n * 100 : 0;
+  const hp = eat.hit == null ? measured : eat.hit, h = hp / 100;
+  const p = S.n ? S.faults / S.n : 0;
+  setVal("#eatMem", eat.mem); setVal("#eatTlb", eat.tlb); setVal("#eatHit", +hp.toFixed(1)); setVal("#eatFault", eat.fault);
+  $("#eatHitSrc").textContent = eat.hit == null ? (vm.tlb ? (S.n ? "measured in this run" : "no accesses yet") : "TLB is off") : "your value";
+  const m = eat.mem, t = eat.tlb, noT = 2 * m, withT = h * (t + m) + (1 - h) * (t + 2 * m), fns = eat.fault * 1e6, withF = withT + p * fns;
+  const pMax = fns ? 0.1 * withT / fns : 0;
+  const out = [];
+  out.push(`<li><span>Without a TLB, every access first reads the page table entry, then the data: 2 × ${m} ns = <b>${fmtNs(noT)}</b>.</span></li>`);
+  out.push(`<li><span>With a TLB hit rate h = ${+hp.toFixed(1)}%: h × (TLB + memory) + (1 − h) × (TLB + 2 × memory) = ${h.toFixed(3)} × ${t + m} + ${(1 - h).toFixed(3)} × ${t + 2 * m} = <b>${fmtNs(withT)}</b>.</span></li>`);
+  if (S.n) out.push(`<li class="${p ? "fault" : "res"}"><span>This run had ${S.faults} page fault${S.faults === 1 ? "" : "s"} in ${S.n} accesses (p = ${p.toFixed(3)}). At ${eat.fault} ms per fault: ${fmtNs(withT)} + p × ${eat.fault} ms = <b>${fmtNs(withF)}</b> per access${p ? `, about ${Math.round(withF / withT).toLocaleString("en-US")} times slower` : ""}.</span></li>`);
+  else out.push(`<li><span>Step through some accesses to measure the page fault rate p.</span></li>`);
+  if (fns) out.push(`<li class="res"><span class="result">To keep page faults from adding more than 10% to the access time, p must stay below ${pMax.toPrecision(2)}: at most one fault in every ${Math.round(1 / pMax).toLocaleString("en-US")} accesses.</span></li>`);
+  $("#eatSteps").innerHTML = out.join("");
+}
+
+function renderVM(){
+  const Wd = VM_WORK[vm.preset], W = Wd.build(), total = W.refs.length;
+  if (vm.k > total) vm.k = total;
+  $("#vmWork").value = vm.preset;
+  $("#vmFrames").value = String(vm.frames);
+  $("#vmPolicy").value = vm.policy;
+  $("#vmTlb").value = String(vm.tlb);
+  $("#vmDelta").value = String(vm.delta);
+  $("#vmCustomWrap").hidden = vm.preset !== "custom";
+  if ($("#vmCustom").value !== vm.custom && document.activeElement !== $("#vmCustom")) $("#vmCustom").value = vm.custom;
+  $("#vmDesc").textContent = Wd.desc(W);
+  const S = vmRun(W, vm.frames, vm.policy, vm.k, vm.tlb);
+  const last = S.n ? S.hist[S.n - 1] : null, lastRef = S.n ? W.refs[S.n - 1] : null;
+  const wsPi = lastRef ? lastRef.pi : -1, wsIdx = new Set(wsPi >= 0 ? workingSet(W, S.n, wsPi, vm.delta).idx : []);
+
+  $("#vmBack").disabled = vm.k === 0;
+  $("#vmStep").disabled = vm.k >= total;
+  $("#vmRun").disabled = !total;
+  $("#vmRun").textContent = vm.timer ? "Pause" : vm.k >= total && total ? "Run again" : "Run";
+
+  const single = W.procs.length === 1;
+  $("#vmRefs").innerHTML = W.refs.map((r, i) => {
+    const P = W.procs[r.pi], done = i < S.n, h = done ? S.hist[i] : null;
+    const mark = done ? (h.hit ? (h.tl && h.tl.kind === "hit" ? "TLB" : "hit") : "F") : "";
+    const cls = [done ? (h.hit ? "h" : "f") : "", i === S.n - 1 ? "cur" : "", i === S.n ? "next" : "", wsIdx.has(i) ? "ws" : ""].join(" ");
+    return `<span class="rc ${cls}" style="--c:${P.color}" title="Access ${i + 1}: ${P.name} page ${r.page}${r.write ? ", write" : ""}"><small>${i + 1}</small><b>${single ? r.page : P.name + "·" + r.page}${r.write ? "<sup>w</sup>" : ""}</b><i>${mark}</i></span>`;
+  }).join("") || `<span class="empty">No accesses.</span>`;
+
+  $("#vmMemSub").textContent = `Frames 0 to ${KFRAMES - 1} hold the kernel and are never replaced. The processes share frames ${FR(0)} to ${FR(vm.frames - 1)}: ${vm.frames} × 4 KB = ${vm.frames*4} KB. Each process has a 64 KB virtual address space of 16 pages.`;
+  $("#vmFrameGrid").innerHTML = S.frames.map((x, j) => {
+    const now = last && last.f === j ? (last.hit ? " hitnow" : " faultnow") : "";
+    const handTag = vm.policy === "clock" && S.hand === j ? `<span class="hand">${S.frames.every(Boolean) ? "hand" : "next"}</span>` : "";
+    const ev = last && !last.hit && last.f === j && last.victim ? `<span class="ev">replaced ${vmPN(W, last.victim.pi, last.victim.page)}</span>` : "";
+    if (!x) return `<div class="vf${now}"><span class="fn">frame ${FR(j)}${handTag}</span><span class="meta">free</span></div>`;
+    const P = W.procs[x.pi];
+    let meta = "";
+    if (vm.policy === "fifo") meta = `loaded at access ${x.loaded + 1}`;
+    else if (vm.policy === "lru") meta = `last used at access ${x.last + 1}`;
+    else if (vm.policy === "opt"){ const n = nextUse(W.refs, S.n, x.pi, x.page); meta = n === Infinity ? "never used again" : `next used at access ${n + 1}`; }
+    return `<div class="vf p${now}" style="--c:${P.color}"><span class="fn">frame ${FR(j)}${handTag}</span><b>${single ? "page " + x.page : P.name + "·p" + x.page}</b>
+      <span class="ub"><span class="${x.u ? "on" : ""}">U=${x.u}</span> <span class="${x.m ? "on" : ""}">M=${x.m}</span></span>${meta ? `<span class="meta">${meta}</span>` : ""}${ev}</div>`;
+  }).join("");
+
+  const items = [
+    ["Accesses", `${S.n} / ${total}`, ""],
+    ["TLB hits", vm.tlb ? `${S.tlbHits} (${S.n ? Math.round(S.tlbHits / S.n * 100) : 0}%)` : "TLB off", ""],
+    ["Page faults", S.faults, S.faults ? "bad" : ""],
+    ["Fault rate", S.n ? Math.round(S.faults / S.n * 100) + "%" : "–", ""],
+    ["Dirty pages written back", S.writes, S.writes ? "bad" : ""],
+    ["Disk time, at 8 ms per page", `${(S.faults + S.writes) * 8} ms`, ""]
+  ];
+  $("#vmStats").innerHTML = items.map(([l, v, c]) => `<div class="stat ${c}"><b>${v}</b>${l}</div>`).join("");
+  $("#vmSteps").innerHTML = vmExplain(W, S).join("");
+
+  if (!vm.tlb) $("#vmTLB").innerHTML = `<p class="empty">TLB off: every access reads its page table entry from memory first.</p>`;
+  else {
+    const tl = last && last.tl;
+    $("#vmTLB").innerHTML = `<table class="tlbt"><tr><th>Slot</th><th>Page</th><th>Frame</th><th>Last used</th></tr>${S.tlb.map((x, j) => {
+      const cls = tl && tl.slot === j ? (tl.kind === "hit" ? "tnow-hit" : "tnow-new") : "";
+      return `<tr class="${cls}"><td>${j}</td><td>${x ? vmPN(W, x.pi, x.page) : `<span class="gl">empty</span>`}</td><td>${x ? FR(x.f) : "–"}</td><td>${x ? "access " + (x.last + 1) : ""}</td></tr>`;
+    }).join("")}</table>`;
+  }
+
+  const used = W.procs.map((_, pi) => new Set(W.refs.filter(r => r.pi === pi).map(r => r.page)));
+  $("#vmPT").innerHTML = W.procs.map((P, pi) => {
+    const t = S.pt[pi], curPg = lastRef && lastRef.pi === pi ? lastRef.page : -1;
+    const ws = workingSet(W, S.n, pi, vm.delta), resident = t.filter(e => e.p).length;
+    const cell = (pg, val) => used[pi].has(pg) ? `<td class="${t[pg].p ? "in" : ""}${pg === curPg ? " cur" : ""}">${val}</td>` : `<td class="na${pg === curPg ? " cur" : ""}">·</td>`;
+    const pages = [...Array(VPAGES).keys()];
+    return `<div style="--c:${P.color}"><h4>${P.name} <small>${esc(P.file)}</small></h4>
+      <p class="wsline">W(t = ${ws.t}, Δ = ${vm.delta}) = <b>{${[...ws.pages].sort((a, b) => a - b).join(", ")}}</b>, ${ws.pages.size} page${ws.pages.size === 1 ? "" : "s"}. Resident: <b>${resident}</b> page${resident === 1 ? "" : "s"}.</p>
+      <div class="tw"><table class="vpt">
+      <tr><th>Page</th>${pages.map(pg => `<th class="${pg === curPg ? "cur" : ""}">${pg}</th>`).join("")}</tr>
+      <tr><th>P</th>${pages.map(pg => cell(pg, t[pg].p)).join("")}</tr>
+      <tr><th>Frame</th>${pages.map(pg => cell(pg, t[pg].p ? FR(t[pg].f) : "–")).join("")}</tr>
+      <tr><th>U</th>${pages.map(pg => cell(pg, t[pg].u)).join("")}</tr>
+      <tr><th>M</th>${pages.map(pg => cell(pg, t[pg].m)).join("")}</tr>
+      <tr><th>W</th>${pages.map(pg => cell(pg, ws.pages.has(pg) ? "•" : "")).join("")}</tr></table></div></div>`;
+  }).join("");
+
+  const cols = Wd.cols;
+  let h = `<tr><th>Policy</th>${cols.map(c => `<th>${c} frame${c > 1 ? "s" : ""}</th>`).join("")}</tr>`;
+  for (const [k, pol] of Object.entries(POLICIES)){
+    const vals = cols.map(c => total ? vmRun(W, c, k, total).faults : 0);
+    h += `<tr class="${k === vm.policy ? "cur" : ""}"><td>${pol.name} <small class="gl">${pol.long}</small></td>${vals.map((v, j) => {
+      const anom = j > 0 && v > vals[j - 1], on = k === vm.policy && cols[j] === vm.frames;
+      return `<td class="${anom ? "anom" : ""}${on ? " on" : ""}">${v}${anom ? " ↑" : ""}</td>`;
+    }).join("")}</tr>`;
+  }
+  $("#vmCmp").innerHTML = h;
+  renderEAT(S);
+}
+
+function vmTotal(){ return VM_WORK[vm.preset].build().refs.length; }
+$("#vmWork").innerHTML = Object.entries(VM_WORK).map(([k, w]) => `<option value="${k}">${esc(w.label)}</option>`).join("");
+$("#vmFrames").innerHTML = Array.from({length:16}, (_, i) => `<option value="${i + 1}">${i + 1} frame${i ? "s" : ""}</option>`).join("");
+$("#vmPolicy").innerHTML = Object.entries(POLICIES).map(([k, p]) => `<option value="${k}">${p.name}</option>`).join("");
+$("#vmWork").addEventListener("change", e => {
+  vmStop(); vm.preset = e.target.value; const w = VM_WORK[vm.preset];
+  vm.frames = w.frames; if (w.policy) vm.policy = w.policy; vm.k = 0; renderVM();
+});
+$("#vmFrames").addEventListener("change", e => { vm.frames = +e.target.value; renderVM(); });
+$("#vmPolicy").addEventListener("change", e => { vm.policy = e.target.value; renderVM(); });
+$("#vmCustom").addEventListener("input", e => { vmStop(); vm.custom = e.target.value; vm.k = 0; renderVM(); });
+$("#vmBack").addEventListener("click", () => { vmStop(); vm.k = Math.max(0, vm.k - 1); renderVM(); });
+$("#vmStep").addEventListener("click", () => { vmStop(); vm.k = Math.min(vmTotal(), vm.k + 1); renderVM(); });
+$("#vmRestart").addEventListener("click", () => { vmStop(); vm.k = 0; renderVM(); });
+$("#vmRun").addEventListener("click", () => {
+  if (vm.timer){ vmStop(); renderVM(); return; }
+  if (vm.k >= vmTotal()) vm.k = 0;
+  vm.timer = setInterval(() => {
+    if (vm.k >= vmTotal()){ vmStop(); renderVM(); return; }
+    vm.k++; renderVM();
+  }, 650);
+  renderVM();
+});
+
+$("#vmTlb").innerHTML = [0, 2, 4, 8].map(n => `<option value="${n}">${n ? n + " entries" : "Off"}</option>`).join("");
+$("#vmDelta").innerHTML = [2, 3, 4, 5, 6, 8, 10].map(n => `<option value="${n}">${n} accesses</option>`).join("");
+$("#vmTlb").addEventListener("change", e => { vm.tlb = +e.target.value; renderVM(); });
+$("#vmDelta").addEventListener("change", e => { vm.delta = +e.target.value; renderVM(); });
+for (const [id, key] of [["#eatMem", "mem"], ["#eatTlb", "tlb"], ["#eatFault", "fault"]]){
+  $(id).addEventListener("input", e => { const v = parseFloat(e.target.value); if (Number.isFinite(v) && v >= 0){ eat[key] = v; renderVM(); } });
+}
+$("#eatHit").addEventListener("input", e => { const v = parseFloat(e.target.value); if (Number.isFinite(v) && v >= 0 && v <= 100){ eat.hit = v; renderVM(); } });
+$("#eatUseRun").addEventListener("click", () => { eat.hit = null; renderVM(); });
+$("#eatP812").addEventListener("click", () => { eat.mem = 250; eat.tlb = 30; eat.hit = 85; renderVM(); });
+
+// ===================== page table sizes =====================
+const UNIT = {KB:2**10, MB:2**20, GB:2**30, TB:2**40, PB:2**50};
+const PT_PAGES = [512, 1024, 2048, 4096, 8192, 16384, 65536, 2**21, 2**30];
+const PT_PTE = [2, 4, 6, 8];
+const PT_PRESETS = {
+  fig83:{label:"Figure 8.3: 32-bit address, 4 KB pages, 4-byte entries", va:4, vau:"GB", page:4096, pte:4, ram:1, ramu:"GB", tlb:64, addr:"0x00403A7C"},
+  p811: {label:"Problem 8.11: 6 GB space, 8 KB pages, 6-byte entries", va:6, vau:"GB", page:8192, pte:6, ram:1, ramu:"GB", tlb:64, addr:"0x12345678"},
+  vax:  {label:"VAX: 2 GB per process, 512-byte pages", va:2, vau:"GB", page:512, pte:4, ram:64, ramu:"MB", tlb:64, addr:"0x7FFFFE00"},
+  x64:  {label:"x86-64: 48-bit address, 4 KB pages, 8-byte entries", va:256, vau:"TB", page:4096, pte:8, ram:16, ramu:"GB", tlb:64, addr:"0x00007FFDE3A4B010"},
+  la57: {label:"x86-64 with 5-level paging: 57-bit address", va:128, vau:"PB", page:4096, pte:8, ram:16, ramu:"GB", tlb:64, addr:"0x00FF7FFDE3A4B010"},
+  lab:  {label:"The Virtual memory tab: 64 KB space, 4 KB pages", va:64, vau:"KB", page:4096, pte:2, ram:128, ramu:"KB", tlb:4, addr:"0x4010"}
+};
+const pt = Object.assign({preset:"fig83"}, PT_PRESETS.fig83);
+function hb(b){
+  const u = ["B", "KB", "MB", "GB", "TB", "PB", "EB"];
+  let i = 0;
+  while (b >= 1024 && i < u.length - 1){ b /= 1024; i++; }
+  const v = b < 10 ? +b.toFixed(2) : b < 100 ? +b.toFixed(1) : Math.round(b);
+  return `${v.toLocaleString("en-US")} ${u[i]}`;
+}
+const pow2 = n => Number.isInteger(Math.log2(n)) ? ` = 2<sup>${Math.log2(n)}</sup>` : "";
+const plural = (n, w) => `${n.toLocaleString("en-US")} ${w}${n === 1 ? "" : "s"}`;
+function ptCalc(o){
+  const VA = o.va * UNIT[o.vau], P = o.page, E = o.pte, RAM = o.ram * UNIT[o.ramu];
+  const pages = Math.max(1, Math.ceil(VA / P));
+  const offBits = Math.log2(P), pnBits = Math.max(1, Math.ceil(Math.log2(pages)));
+  const perTable = Math.floor(P / E), idxBits = Math.floor(Math.log2(perTable));
+  const levels = Math.max(1, Math.ceil(pnBits / idxBits));
+  const fields = levels === 1 ? [pnBits] : [pnBits - idxBits * (levels - 1), ...Array(levels - 1).fill(idxBits)];
+  const flat = pages * E;
+  const topSize = levels === 1 ? flat : 2 ** fields[0] * E;
+  const small = levels === 1 ? flat : topSize + 3 * (levels - 1) * P;
+  const frames = Math.max(1, Math.floor(RAM / P));
+  return {VA, P, E, RAM, pages, offBits, pnBits, vaBits:pnBits + offBits, perTable, idxBits, levels, fields, flat, topSize, small, frames, inv:frames * 16, reach:o.tlb * P};
+}
+function renderPT(){
+  $("#ptPreset").value = pt.preset;
+  setVal("#ptVA", pt.va); $("#ptVAu").value = pt.vau;
+  $("#ptPage").value = String(pt.page); $("#ptPTE").value = String(pt.pte);
+  setVal("#ptRAM", pt.ram); $("#ptRAMu").value = pt.ramu;
+  setVal("#ptTLB", pt.tlb); setVal("#ptAddr", pt.addr);
+  const c = ptCalc(pt);
+  const fieldsHTML = `<div class="fieldsw"><div class="fields" role="img" aria-label="Address split: ${c.fields.join(" + ")} index bits, then ${c.offBits} offset bits">${c.fields.map((b, i) => `<span style="flex-grow:${b}" title="${c.levels === 1 ? "Page number" : `Level ${i + 1} index`}"><b>${b}</b>${c.levels === 1 ? "page" : `L${i + 1}`}</span>`).join("")}<span class="off" style="flex-grow:${c.offBits}" title="Offset"><b>${c.offBits}</b>offset</span></div></div><p class="foot" style="margin-top:2px">Bits per field: ${c.levels === 1 ? "page number" : `level 1 to ${c.levels} indexes`}, then the offset.</p>`;
+  const ragged = c.perTable !== 2 ** c.idxBits;
+  $("#ptCards").innerHTML = `
+    <section class="card"><h2>Flat page table</h2><div class="big">${hb(c.flat)}</div>
+      <p>${c.pages.toLocaleString("en-US")} pages${pow2(c.pages)}, × ${c.E}-byte entries, per process.</p>
+      <p>One entry for every virtual page, used or not. ${c.flat < c.P ? "That is less than one page of memory." : `That is ${(c.flat / c.P).toLocaleString("en-US", {maximumFractionDigits:1})} pages of memory just for one process's table.`}</p></section>
+    <section class="card"><h2>Multi-level page table</h2><div class="big">${c.levels === 1 ? "1 level is enough" : `${c.levels} levels`}</div>
+      ${fieldsHTML}
+      <p>Each table fills one ${hb(c.P)} page: ${c.perTable.toLocaleString("en-US")} entries${ragged ? `, but ${c.E}-byte entries do not divide the page evenly, so ${(2 ** c.idxBits).toLocaleString("en-US")} are indexed` : ""}, so each level uses ${c.idxBits} index bits.</p>
+      <p>${c.levels === 1 ? `The whole ${c.pnBits}-bit page number fits one table, ${hb(c.flat)}.` : `Always in memory: the top table, ${hb(c.topSize)}. A small program with code, data and stack far apart needs about <b>${hb(c.small)}</b> of tables instead of ${hb(c.flat)}.`}</p></section>
+    <section class="card"><h2>Inverted page table</h2><div class="big">${hb(c.inv)}</div>
+      <p>${plural(c.frames, "frame")} of ${hb(c.P)} × 16-byte entries (page number, process ID, control bits, chain pointer).</p>
+      <p>One table for the whole machine. Its size follows physical memory, not the number of processes or the size of their address spaces. Lookup needs a hash of the page number.</p></section>
+    <section class="card"><h2>TLB reach</h2><div class="big">${hb(c.reach)}</div>
+      <p>${pt.tlb.toLocaleString("en-US")} TLB entries × ${hb(c.P)} pages, about ${(c.reach / c.RAM * 100).toPrecision(2)}% of the ${hb(c.RAM)} of RAM.</p>
+      <p>The TLB can translate this much memory without reading a page table. Bigger pages reach further with the same TLB.</p></section>`;
+
+  $("#ptSplitSub").textContent = `${c.vaBits}-bit addresses in this example`;
+  let v;
+  try { v = BigInt(pt.addr.trim()); } catch (e) { v = null; }
+  const lim = 1n << BigInt(c.vaBits);
+  if (v == null || v < 0n){ $("#ptSplit").innerHTML = `<p class="note warn">Type an address in hex, like 0x00403A7C.</p>`; }
+  else if (v >= lim){ $("#ptSplit").innerHTML = `<p class="note warn">${esc(pt.addr)} is outside this ${c.vaBits}-bit address space. The largest address is 0x${(lim - 1n).toString(16).toUpperCase()}.</p>`; }
+  else {
+    const offMask = (1n << BigInt(c.offBits)) - 1n, off = v & offMask;
+    let rest = v >> BigInt(c.offBits);
+    const idx = [];
+    for (let i = c.fields.length - 1; i >= 0; i--){ const b = BigInt(c.fields[i]); idx[i] = rest & ((1n << b) - 1n); rest >>= b; }
+    const binOf = (x, n) => x.toString(2).padStart(n, "0");
+    const boxes = idx.map((x, i) => `<div><b>${c.levels === 1 ? "Page number" : `Level ${i + 1} index`}</b><code>${binOf(x, c.fields[i])}</code>= ${x.toString()}</div>`).join("") +
+      `<div><b>Offset</b><code>${binOf(off, c.offBits)}</code>= 0x${off.toString(16).toUpperCase()}</div>`;
+    const steps = [];
+    if (c.levels === 1) steps.push(`<li><span>Page number ${idx[0]} indexes the page table, which holds the frame number for this page.</span></li>`);
+    else idx.forEach((x, i) => steps.push(`<li><span>Level ${i + 1} index ${x} selects an entry in ${i === 0 ? "the top table (its address is in a processor register)" : `the level ${i + 1} table`}, which points to ${i === idx.length - 1 ? "the page frame" : `a level ${i + 2} table`}.</span></li>`));
+    steps.push(`<li class="res"><span class="result">Physical address = frame number followed by offset 0x${off.toString(16).toUpperCase()}. Without a TLB hit this took ${plural(c.levels, "table read")} before the data access.</span></li>`);
+    $("#ptSplit").innerHTML = `<div class="split">${boxes}</div><ol class="steps">${steps.join("")}</ol>`;
+  }
+
+  const rows = PT_PAGES.filter(P => P < c.VA && Math.floor(P / pt.pte) >= 2).map(P => ({P, r:ptCalc(Object.assign({}, pt, {page:P}))}));
+  $("#ptSizes").innerHTML = `<tr><th>Page size</th><th>Pages</th><th>Flat table</th><th>Levels</th><th>TLB reach</th><th>Internal waste</th></tr>` +
+    rows.map(({P, r}) => `<tr class="${P === pt.page ? "cur" : ""}"><td>${hb(P)}</td><td>${r.pages.toLocaleString("en-US")}</td><td>${hb(r.flat)}</td><td>${r.levels} (${r.fields.join(" + ")} + ${r.offBits} bits)</td><td>${hb(r.reach)}</td><td>${hb(1.5 * P)}</td></tr>`).join("");
+}
+$("#ptPreset").innerHTML = Object.entries(PT_PRESETS).map(([k, p]) => `<option value="${k}">${esc(p.label)}</option>`).join("") + `<option value="custom">Your own values</option>`;
+$("#ptVAu").innerHTML = $("#ptRAMu").innerHTML = Object.keys(UNIT).map(u => `<option>${u}</option>`).join("");
+$("#ptPage").innerHTML = PT_PAGES.map(P => `<option value="${P}">${hb(P)}</option>`).join("");
+$("#ptPTE").innerHTML = PT_PTE.map(n => `<option value="${n}">${n} bytes</option>`).join("");
+$("#ptPreset").addEventListener("change", e => { const k = e.target.value; if (PT_PRESETS[k]) Object.assign(pt, PT_PRESETS[k]); pt.preset = k; renderPT(); });
+const ptSet = (key, num) => e => { const v = num ? parseFloat(e.target.value) : e.target.value; if (num && !(Number.isFinite(v) && v > 0)) return; pt[key] = v; pt.preset = "custom"; renderPT(); };
+$("#ptVA").addEventListener("input", ptSet("va", true));
+$("#ptVAu").addEventListener("change", ptSet("vau", false));
+$("#ptPage").addEventListener("change", e => { pt.page = +e.target.value; pt.preset = "custom"; renderPT(); });
+$("#ptPTE").addEventListener("change", e => { pt.pte = +e.target.value; pt.preset = "custom"; renderPT(); });
+$("#ptRAM").addEventListener("input", ptSet("ram", true));
+$("#ptRAMu").addEventListener("change", ptSet("ramu", false));
+$("#ptTLB").addEventListener("input", e => { const v = parseInt(e.target.value, 10); if (v > 0){ pt.tlb = v; pt.preset = "custom"; renderPT(); } });
+$("#ptAddr").addEventListener("input", e => { pt.addr = e.target.value; renderPT(); });
+
+// ===================== thrashing =====================
+const TH_MAX = 14;
+const th = {frames:64, ws:10, disk:50, n:5, key:"", runs:null};
+function mulberry32(a){ return function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+// One CPU, one paging disk. Each process: 96 virtual pages, a locality of w pages that moves every 3,000 accesses,
+// 0.5% of accesses anywhere, ordinary I/O wait of 400 units every 300 accesses, equal fixed allocation, local LRU.
+function thrashSim(N, F, w, D){
+  const T = 40000, VP = 96, SHIFT = 3000, Q = 20, IO_EVERY = 300, IO_TIME = 400;
+  const rnd = mulberry32(2024 + N * 7919 + F * 31 + w * 17 + D);
+  const per = Math.max(1, Math.floor(F / N));
+  const procs = Array.from({length:N}, () => ({base:Math.floor(rnd() * (VP - w)), phase:Math.floor(rnd() * SHIFT) + 1, io:Math.floor(rnd() * IO_EVERY) + 1, frames:new Map(), refs:0, faults:0, ioUntil:-1}));
+  const ready = procs.slice(), ioWait = [], diskQ = [];
+  let running = null, q = 0, diskJob = null, diskEnd = 0, cpuBusy = 0, diskBusy = 0;
+  const install = (p, page, t) => {
+    if (p.frames.size >= per){ let old = -1, ot = Infinity; for (const [k, v] of p.frames) if (v < ot){ ot = v; old = k; } p.frames.delete(old); }
+    p.frames.set(page, t);
+  };
+  for (let t = 0; t < T; t++){
+    for (let k = ioWait.length - 1; k >= 0; k--) if (ioWait[k].ioUntil <= t){ ready.push(ioWait[k]); ioWait.splice(k, 1); }
+    if (diskJob && t >= diskEnd){ install(diskJob.p, diskJob.page, t); ready.push(diskJob.p); diskJob = null; }
+    if (!diskJob && diskQ.length){ diskJob = diskQ.shift(); diskEnd = t + D; }
+    if (diskJob) diskBusy++;
+    if (!running && ready.length){ running = ready.shift(); q = Q; }
+    if (!running) continue;
+    cpuBusy++;
+    const p = running;
+    if (--p.phase <= 0){ p.base = Math.floor(rnd() * (VP - w)); p.phase = SHIFT; }
+    const page = rnd() < 0.995 ? p.base + Math.floor(rnd() * w) : Math.floor(rnd() * VP);
+    p.refs++;
+    if (!p.frames.has(page)){ p.faults++; diskQ.push({p, page}); running = null; continue; }
+    p.frames.set(page, t);
+    if (--p.io <= 0){ p.io = IO_EVERY; p.ioUntil = t + IO_TIME; ioWait.push(p); running = null; continue; }
+    if (--q <= 0){ ready.push(p); running = null; }
+  }
+  const refs = procs.reduce((a, p) => a + p.refs, 0), faults = procs.reduce((a, p) => a + p.faults, 0);
+  return {N, per, cpu:cpuBusy / T * 100, disk:diskBusy / T * 100, fpk:refs ? 1000 * faults / refs : 0, L:faults ? refs / faults : Infinity};
+}
+function thrashRuns(){
+  const key = [th.frames, th.ws, th.disk].join();
+  if (th.key !== key){ th.runs = Array.from({length:TH_MAX}, (_, i) => thrashSim(i + 1, th.frames, th.ws, th.disk)); th.key = key; }
+  return th.runs;
+}
+function renderThrash(){
+  const runs = thrashRuns();
+  $("#thFrames").value = String(th.frames); $("#thWS").value = String(th.ws); $("#thDisk").value = String(th.disk);
+  $("#thN").value = String(th.n); $("#thNout").textContent = th.n;
+  const best = runs.reduce((a, r) => r.cpu > a.cpu ? r : a, runs[0]);
+  const fits = Math.floor(th.frames / th.ws);
+  const lsRow = runs.reduce((a, r) => Math.abs(r.L - th.disk) < Math.abs(a.L - th.disk) ? r : a, runs[0]);
+  const halfRow = runs.reduce((a, r) => Math.abs(r.disk - 50) < Math.abs(a.disk - 50) ? r : a, runs[0]);
+
+  // chart
+  const W = 640, H = 300, ml = 46, mr = 16, mt = 14, mb = 44, pw = W - ml - mr, ph = H - mt - mb;
+  const x = n => ml + (n - 1) / (TH_MAX - 1) * pw, y = v => mt + ph - v / 100 * ph;
+  let g = "";
+  if (fits < TH_MAX){
+    const x0 = (x(Math.max(1, fits)) + x(fits + 1)) / 2;
+    g += `<rect class="band" x="${x0}" y="${mt}" width="${ml + pw - x0}" height="${ph}"/>`;
+    g += `<text x="${x0 + 8}" y="${y(55)}">Frames per process</text><text x="${x0 + 8}" y="${y(55) + 15}">&lt; working set</text>`;
+  }
+  for (const v of [0, 25, 50, 75, 100]) g += `<line class="grid" x1="${ml}" x2="${ml + pw}" y1="${y(v)}" y2="${y(v)}"/><text x="${ml - 8}" y="${y(v) + 4}" text-anchor="end">${v}%</text>`;
+  for (let n = 1; n <= TH_MAX; n++) g += `<text x="${x(n)}" y="${mt + ph + 18}" text-anchor="middle">${n}</text>`;
+  g += `<line class="axis" x1="${ml}" x2="${ml + pw}" y1="${y(0)}" y2="${y(0)}"/>`;
+  g += `<text x="${ml + pw / 2}" y="${H - 6}" text-anchor="middle">Processes in memory (multiprogramming level)</text>`;
+  g += `<line class="sel" x1="${x(th.n)}" x2="${x(th.n)}" y1="${mt}" y2="${mt + ph}"/>`;
+  const path = (key) => runs.map((r, i) => `${i ? "L" : "M"}${x(r.N).toFixed(1)},${y(r[key]).toFixed(1)}`).join(" ");
+  g += `<path d="${path("disk")}" fill="none" style="stroke:var(--s2)" stroke-width="2" stroke-dasharray="6 4" stroke-linejoin="round"/>`;
+  g += `<path d="${path("cpu")}" fill="none" style="stroke:var(--s1)" stroke-width="2" stroke-linejoin="round"/>`;
+  for (const r of runs){
+    const sel = r.N === th.n, rad = sel ? 6 : 4;
+    g += `<rect x="${x(r.N) - rad}" y="${y(r.disk) - rad}" width="${rad * 2}" height="${rad * 2}" rx="1.5" style="fill:var(--s2);stroke:var(--panel)" stroke-width="2"/>`;
+    g += `<circle cx="${x(r.N)}" cy="${y(r.cpu)}" r="${rad}" style="fill:var(--s1);stroke:var(--panel)" stroke-width="2"/>`;
+  }
+  g += `<text class="lab" x="${x(best.N)}" y="${y(best.cpu) - 12}" text-anchor="middle">Peak ${Math.round(best.cpu)}%</text>`;
+  for (const r of runs) g += `<rect class="hit" data-n="${r.N}" x="${x(r.N) - pw / (TH_MAX - 1) / 2}" y="${mt}" width="${pw / (TH_MAX - 1)}" height="${ph}"><title>${r.N} processes</title></rect>`;
+  $("#thChart").innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="CPU busy and paging disk busy, in percent, for 1 to ${TH_MAX} processes. CPU peaks at ${Math.round(best.cpu)}% with ${best.N} processes.">${g}</svg><div class="tip" id="thTip" hidden></div>`;
+  $("#thLegend").innerHTML = `<span><svg width="26" height="12" aria-hidden="true"><line x1="1" x2="25" y1="6" y2="6" style="stroke:var(--s1)" stroke-width="2"/><circle cx="13" cy="6" r="4" style="fill:var(--s1)"/></svg>CPU busy</span>
+    <span><svg width="26" height="12" aria-hidden="true"><line x1="1" x2="25" y1="6" y2="6" style="stroke:var(--s2)" stroke-width="2" stroke-dasharray="6 4"/><rect x="9" y="2" width="8" height="8" rx="1.5" style="fill:var(--s2)"/></svg>Paging disk busy</span>`;
+
+  // selected level
+  const r = runs[th.n - 1], short = r.per < th.ws;
+  $("#thKV").innerHTML = [
+    ["CPU busy", Math.round(r.cpu) + "%", r.cpu < best.cpu * 0.5 ? "bad" : ""],
+    ["Paging disk busy", Math.round(r.disk) + "%", r.disk > 95 ? "bad" : ""],
+    ["Frames per process", `${r.per} for ${th.ws} pages`, short ? "bad" : ""],
+    ["Faults per 1,000 accesses", r.fpk.toFixed(1), short ? "bad" : ""]
+  ].map(([l, v, c]) => `<div class="${c}"><b>${v}</b>${l}</div>`).join("");
+  let note;
+  if (short) note = `<b>Thrashing.</b> Each of the ${r.N} processes gets only ${r.per} frames, fewer than its ${th.ws}-page working set, so it evicts pages it is still using. The paging disk is busy ${Math.round(r.disk)}% of the time and the CPU only ${Math.round(r.cpu)}%. Load control would suspend processes until each one has room for its working set: at ${best.N} processes the CPU reaches ${Math.round(best.cpu)}%.`;
+  else if (r.N < best.N) note = `Each process has ${r.per} frames, enough for its ${th.ws}-page working set. The CPU is idle mainly when every process is waiting for I/O at once, so adding processes raises CPU use, up to ${Math.round(best.cpu)}% at ${best.N} processes.`;
+  else if (r.N === best.N) note = `This is the peak: ${Math.round(r.cpu)}% CPU with ${r.N} processes, each holding ${r.per} frames for a ${th.ws}-page working set.`;
+  else note = `Each process still has ${r.per} frames for its ${th.ws}-page working set, but the paging disk is getting busy (${Math.round(r.disk)}%) and faults are queueing behind each other. Past ${fits} processes the working sets no longer fit and CPU use collapses.`;
+  $("#thNote").innerHTML = note;
+  $("#thNote").className = "note" + (short ? " warn" : "");
+
+  // table
+  $("#thTable").innerHTML = `<tr><th>Processes</th><th>Frames each</th><th>Faults per 1,000</th><th>L (accesses between faults)</th><th>CPU busy</th><th>Paging disk busy</th></tr>` +
+    runs.map(q => `<tr class="${q.N === th.n ? "cur" : ""}"><td>${q.N}${q.N === best.N ? `<span class="tag2">peak</span>` : ""}${q.N === lsRow.N ? `<span class="tag2">L ≈ S</span>` : ""}${q.N === halfRow.N ? `<span class="tag2">disk ≈ 50%</span>` : ""}</td>
+      <td class="${q.per < th.ws ? "bad" : ""}">${q.per}</td><td>${q.fpk.toFixed(1)}</td><td>${Number.isFinite(q.L) ? Math.round(q.L) : "no faults"}</td>
+      <td class="${q.N === best.N ? "best" : ""}">${Math.round(q.cpu)}%</td><td>${Math.round(q.disk)}%</td></tr>`).join("");
+}
+$("#thFrames").innerHTML = [32, 48, 64, 96].map(n => `<option value="${n}">${n} frames</option>`).join("");
+$("#thWS").innerHTML = [6, 8, 10, 12, 16].map(n => `<option value="${n}">${n} pages</option>`).join("");
+$("#thDisk").innerHTML = [20, 50, 100, 200].map(n => `<option value="${n}">${n} access times</option>`).join("");
+$("#thFrames").addEventListener("change", e => { th.frames = +e.target.value; renderThrash(); });
+$("#thWS").addEventListener("change", e => { th.ws = +e.target.value; renderThrash(); });
+$("#thDisk").addEventListener("change", e => { th.disk = +e.target.value; renderThrash(); });
+$("#thN").addEventListener("input", e => { th.n = +e.target.value; renderThrash(); });
+$("#thChart").addEventListener("click", e => { const t = e.target.closest("[data-n]"); if (t){ th.n = +t.dataset.n; renderThrash(); } });
+$("#thChart").addEventListener("mousemove", e => {
+  const t = e.target.closest("[data-n]"), tip = $("#thTip");
+  if (!t || !tip){ if (tip) tip.hidden = true; return; }
+  const r = th.runs[+t.dataset.n - 1], box = $("#thChart").getBoundingClientRect();
+  tip.innerHTML = `<b>${r.N} process${r.N > 1 ? "es" : ""}</b>, ${r.per} frames each<br>CPU busy ${Math.round(r.cpu)}% · disk busy ${Math.round(r.disk)}%<br>${r.fpk.toFixed(1)} faults per 1,000 accesses`;
+  tip.hidden = false;
+  const left = Math.min(e.clientX - box.left + 12, box.width - tip.offsetWidth - 4);
+  tip.style.left = Math.max(0, left) + "px"; tip.style.top = Math.max(0, e.clientY - box.top - tip.offsetHeight - 10) + "px";
+});
+$("#thChart").addEventListener("mouseleave", () => { const tip = $("#thTip"); if (tip) tip.hidden = true; });
 
 // ===================== actions =====================
 let colorIdx = 0, letterIdx = 0;
