@@ -1,0 +1,781 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>I/O Lab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: same family as the process-and-thread simulator — machine view on top, processes beside the CPU, one card per device, then timeline and log. */
+:root{
+  --bg:#E7ECF0; --panel:#F9FBFC; --ink:#15202B; --muted:#586775; --line:#B6C2CC; --soft:#DCE3E9;
+  --ready:#10857A; --readyfill:#E1F3F0;
+  --run:#D98200;  --runfill:#FFF1D6;
+  --blk:#7449C0;  --blkfill:#EEE6FA;
+  --exit:#8A939C; --exitfill:#EFF1F2;
+  --disk:#2E7FD6; --net:#2A9D5C; --kbd:#B07A00; --disp:#8E44AD; --irq:#D93A2F;
+  --screen:#0F1A14; --screenink:#9BE8B0;
+  --sans:"Atkinson Hyperlegible","Segoe UI",system-ui,-apple-system,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+  --bg:#10171E; --panel:#18222C; --ink:#E4EAF0; --muted:#98A6B3; --line:#344351; --soft:#223040;
+  --ready:#3CC4B4; --readyfill:#0F2D2A; --run:#F5A524; --runfill:#35270B; --blk:#AC8CEB; --blkfill:#261C39;
+  --exit:#7F8993; --exitfill:#1C232A; --disk:#6AA8F0; --net:#5CC98A; --kbd:#E1B84A; --disp:#C08BE6; --irq:#FF7A6E;
+  --screen:#07100B; --screenink:#9BE8B0; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#10171E; --panel:#18222C; --ink:#E4EAF0; --muted:#98A6B3; --line:#344351; --soft:#223040;
+  --ready:#3CC4B4; --readyfill:#0F2D2A; --run:#F5A524; --runfill:#35270B; --blk:#AC8CEB; --blkfill:#261C39;
+  --exit:#7F8993; --exitfill:#1C232A; --disk:#6AA8F0; --net:#5CC98A; --kbd:#E1B84A; --disp:#C08BE6; --irq:#FF7A6E;
+  --screen:#07100B; --screenink:#9BE8B0; color-scheme:dark }
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font:16px/1.45 var(--sans);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+main{max-width:1320px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:8px 24px}
+h1{font-size:clamp(28px,4vw,40px);line-height:1.05;margin:0;letter-spacing:-.01em}
+header p{margin:6px 0 0;color:var(--muted);max-width:70ch}
+.clock{font-size:15px;color:var(--muted)} .clock b{font-size:28px;color:var(--ink);font-variant-numeric:tabular-nums;margin-left:6px}
+.controls{display:flex;flex-wrap:wrap;gap:10px}
+.group{display:flex;flex-wrap:wrap;align-items:center;gap:8px;min-width:0;max-width:100%;background:var(--panel);border:1px solid var(--soft);border-radius:10px;padding:8px 10px}
+.gl{font-size:13px;color:var(--muted)}
+button,select,input[type=text]{font:inherit;font-size:14px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:6px 11px;max-width:100%}
+button,select{cursor:pointer}
+select{min-width:0;text-overflow:ellipsis}
+button:hover:not(:disabled),select:hover{border-color:var(--muted)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button.primary{background:var(--ink);color:var(--panel);border-color:var(--ink);font-weight:700}
+:focus-visible{outline:3px solid var(--ready);outline-offset:2px}
+.card{background:var(--panel);border:1px solid var(--soft);border-radius:14px;padding:14px;min-width:0}
+.card h2{font-size:17px;margin:0}
+.chead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 12px;margin-bottom:10px}
+.sub{font-size:13px;color:var(--muted)}
+.scroll{overflow-x:auto}
+#machine{display:block;width:100%;min-width:680px;height:auto}
+.top{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:14px}
+.devs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+@media (max-width:980px){.top,.devs{grid-template-columns:minmax(0,1fr)}}
+.chip{display:inline-flex;align-items:center;gap:4px;font-weight:700;font-size:13px;padding:1px 8px;border-radius:999px;border:2px solid var(--c);background:var(--panel);color:var(--ink);line-height:1.4;white-space:nowrap}
+.chip small{font-weight:400;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:5px;min-height:26px;align-items:center}
+.empty{color:var(--muted);font-size:14px;font-style:italic}
+.pill{font-size:12px;font-weight:700;padding:1px 8px;border-radius:999px;color:var(--panel);background:var(--sc);white-space:nowrap}
+.procs{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px}
+.proc{border:2px solid var(--pc);border-radius:12px;padding:10px;display:grid;gap:8px;min-width:0;align-content:start}
+.ph{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
+.ph b{font-size:18px;color:var(--pc)} .ph code{font-family:var(--mono);font-size:13px;color:var(--muted)}
+.ph .done{margin-left:auto;font-size:13px;color:var(--muted)}
+.code{font-family:var(--mono);font-size:12.5px;background:var(--bg);border-radius:7px;padding:4px 0;overflow-x:auto}
+.code .row{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:6px;align-items:center;padding:1px 8px;min-height:21px;white-space:pre}
+.code .ln{color:var(--muted);text-align:right;font-size:11px}
+.code .hot{background:var(--runfill);box-shadow:inset 3px 0 0 var(--run)}
+.code .wait{background:var(--blkfill);box-shadow:inset 3px 0 0 var(--blk)}
+.pcm{font:700 11px var(--sans);border:1.5px solid var(--pc);border-radius:999px;padding:0 6px;margin-left:3px;background:var(--panel);color:var(--ink)}
+.trow{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:8px;align-items:center;font-size:13px}
+.trow .why{color:var(--muted);overflow-wrap:anywhere}
+.side h3{font-size:14px;margin:12px 0 6px;color:var(--muted)} .side h3:first-child{margin-top:0}
+.core{padding:10px;border-radius:9px;background:var(--bg);border:2px solid transparent;font-size:14px}
+.core.on{border-color:var(--run);background:var(--runfill)}
+.core.isr{border-color:var(--irq)}
+.core.spin{border-color:var(--run);background:repeating-linear-gradient(135deg,var(--runfill) 0 8px,var(--panel) 8px 16px)}
+.qdots{display:inline-flex;gap:3px;margin-left:6px;vertical-align:middle}
+.qdots i{width:8px;height:8px;border-radius:50%;background:var(--line)} .qdots i.on{background:var(--run)}
+.bars{display:grid;gap:5px;font-size:13px}
+.bar{display:grid;grid-template-columns:100px minmax(0,1fr) 44px;gap:8px;align-items:center}
+.bar .tr{height:10px;background:var(--soft);border-radius:5px;overflow:hidden} .bar .tr i{display:block;height:100%}
+.bar .v{text-align:right;font-variant-numeric:tabular-nums}
+.dev{display:grid;gap:10px;border-top:4px solid var(--dc);align-content:start}
+.dev h2{color:var(--dc)}
+.policy{font-size:13.5px;background:var(--bg);border-left:4px solid var(--dc);border-radius:0 8px 8px 0;padding:6px 10px}
+.row2{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.lbl{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.stats{display:flex;flex-wrap:wrap;gap:6px}
+.stat{font-size:12.5px;background:var(--bg);border-radius:999px;padding:3px 10px;font-variant-numeric:tabular-nums}
+.stat b{font-weight:700}
+.stat.bad{color:var(--irq)}
+.arm{position:relative;height:34px;border-radius:6px;background:var(--bg);border:1px solid var(--line)}
+.arm .rq{position:absolute;top:6px;width:10px;height:10px;margin-left:-5px;border-radius:50%;border:2px solid var(--c);background:var(--panel)}
+.arm .rq.w{border-radius:2px}
+.arm .hd{position:absolute;top:2px;bottom:2px;width:4px;margin-left:-2px;background:var(--disk);border-radius:2px;transition:left .3s}
+.arm .ax{position:absolute;bottom:1px;font:10px var(--mono);color:var(--muted)}
+.slots{display:flex;flex-wrap:wrap;gap:3px;align-items:center}
+.slots i{width:14px;height:14px;border-radius:3px;border:1.5px solid var(--net);display:inline-block}
+.slots i.f{background:var(--net)}
+.bytes{display:flex;flex-wrap:wrap;gap:3px;min-height:30px;align-items:center}
+.byte{font:600 13px var(--mono);min-width:24px;height:26px;display:inline-grid;place-items:center;padding:0 5px;border-radius:5px;border:1.5px solid var(--kbd);background:var(--panel)}
+.byte.o{border-color:var(--disp)}
+.cap{height:8px;border-radius:4px;background:var(--soft);overflow:hidden} .cap i{display:block;height:100%;background:var(--disp)}
+.screen{background:var(--screen);color:var(--screenink);font:13px/1.45 var(--mono);border-radius:8px;padding:8px 10px;height:150px;overflow-y:auto;white-space:pre-wrap;word-break:break-word}
+.screen .cur{display:inline-block;width:8px;height:14px;background:var(--screenink);vertical-align:-2px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+#timeline{display:block}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:14px;height:9px;border-radius:2px;margin-right:4px;vertical-align:middle}
+#log{list-style:none;margin:0;padding:0;max-height:360px;overflow-y:auto;font-size:14px}
+#log li{padding:5px 0;border-bottom:1px solid var(--soft);display:grid;grid-template-columns:52px 1fr;gap:6px}
+#log li .t{color:var(--muted);font-variant-numeric:tabular-nums;font-size:13px}
+#log li.warn{color:var(--irq)}
+.tip{font-size:14px;background:var(--readyfill);border-radius:8px;padding:8px 12px;margin:0}
+kbd{font-family:var(--mono);font-size:12px;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 4px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<main>
+  <header>
+    <div>
+      <h1>I/O Lab</h1>
+      <p>Processes and threads make real system calls: reading and writing the disk, receiving and sending on the network, reading the keyboard and writing to the screen. Each device keeps its own queue and serves it with its own policy. Watch who waits, where, and why.</p>
+    </div>
+    <div class="clock" aria-live="polite">Tick (1 ms)<b id="tick">0</b></div>
+  </header>
+
+  <div class="controls">
+    <div class="group">
+      <button id="btnPlay" class="primary">Play</button>
+      <button id="btnStep">Step</button>
+      <select id="speed" aria-label="Speed"><option value="600">Slow</option><option value="250" selected>Normal</option><option value="80">Fast</option></select>
+      <button id="btnReset">Reset</button>
+    </div>
+    <div class="group">
+      <span class="gl">Scenario</span>
+      <select id="scenario" aria-label="Scenario"></select>
+    </div>
+    <div class="group">
+      <span class="gl">Add process</span>
+      <select id="prog" aria-label="Program to start"></select>
+      <button id="btnAdd">Start</button>
+    </div>
+    <div class="group">
+      <span class="gl">CPU time slice</span>
+      <select id="quantum" aria-label="CPU time slice"><option value="2">2 ms</option><option value="4" selected>4 ms</option><option value="8">8 ms</option></select>
+      <span class="gl">Disk and network move data by</span>
+      <select id="tech" aria-label="How disk and network move data">
+        <option value="pio">Programmed I/O (thread polls)</option>
+        <option value="intr">Interrupts (CPU copies)</option>
+        <option value="dma" selected>DMA (device copies)</option>
+      </select>
+    </div>
+  </div>
+  <p class="tip" id="tip"></p>
+
+  <section class="card">
+    <div class="chead"><h2>Machine view</h2><span class="sub">Dots travel along the bus as data moves. A red flash on a controller and on the CPU is an interrupt.</span></div>
+    <div class="scroll"><svg id="machine" viewBox="0 0 900 300" role="img" aria-label="CPU, main memory, system bus, disk, keyboard, network and display controllers with their devices"></svg></div>
+  </section>
+
+  <div class="top">
+    <section class="card">
+      <div class="chead"><h2>Processes and threads</h2><span class="sub">The highlighted line is where each thread is. Purple means the thread is blocked there, waiting for a device.</span></div>
+      <div class="procs" id="procs"></div>
+    </section>
+    <aside class="card side" id="cpu"></aside>
+  </div>
+
+  <div class="devs">
+    <section class="card dev" style="--dc:var(--disk)">
+      <div class="chead"><h2>Disk</h2><span class="sub">tracks 0–199 · 2 ms + 1 ms per 20 tracks of seek</span></div>
+      <div class="row2"><span class="lbl">Scheduling</span>
+        <select id="dpol" aria-label="Disk scheduling policy">
+          <option value="FIFO">FIFO: in order received</option><option value="SSTF">SSTF: nearest track next</option>
+          <option value="SCAN">SCAN: sweep like an elevator</option><option value="CSCAN">C-SCAN: sweep one way, jump back</option>
+          <option value="Deadline">Deadline: SCAN, but old requests first</option>
+        </select></div>
+      <div class="policy" id="dpolTxt"></div>
+      <div class="arm" id="arm"></div>
+      <div><span class="lbl">Disk queue</span><div class="chips" id="dq"></div></div>
+      <div class="stats" id="dstats"></div>
+    </section>
+
+    <section class="card dev" style="--dc:var(--net)">
+      <div class="chead"><h2>Network</h2><span class="sub">1 ms to receive a packet · 1 ms per 4 KB to send</span></div>
+      <div class="row2"><span class="lbl">Socket buffer</span>
+        <select id="sock" aria-label="Socket buffer size"><option value="1">1 packet per port</option><option value="4" selected>4 packets per port</option><option value="16">16 packets per port</option></select></div>
+      <div class="policy">Incoming packets are served first, then outgoing ones, each in arrival order. A packet goes to the thread waiting on its port, or into that port's socket buffer. If the buffer is full it is dropped, and the sender resends it 20 ms later.</div>
+      <div id="ports"></div>
+      <div><span class="lbl">Card queue</span><div class="chips" id="nq"></div></div>
+      <div class="stats" id="nstats"></div>
+    </section>
+
+    <section class="card dev" style="--dc:var(--kbd)">
+      <div class="chead"><h2>Keyboard</h2><span class="sub">one interrupt per key · echoed to the screen</span></div>
+      <div class="row2"><span class="lbl">Terminal mode</span>
+        <select id="tty" aria-label="Terminal mode"><option value="line" selected>Line mode: read() returns a whole line</option><option value="byte">Byte mode: read() returns each key</option></select></div>
+      <div class="policy" id="ttyTxt"></div>
+      <div><label class="lbl" for="kbdIn">Type here (you are the keyboard)</label>
+        <input type="text" id="kbdIn" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="type a command, press Enter" style="width:100%;font-family:var(--mono)"></div>
+      <div><span class="lbl">Input queue in the OS</span><div class="bytes" id="kq"></div></div>
+      <div><span class="lbl">Threads waiting in read()</span><div class="chips" id="kw"></div></div>
+      <div class="stats" id="kstats"></div>
+    </section>
+
+    <section class="card dev" style="--dc:var(--disp)">
+      <div class="chead"><h2>Display</h2><span class="sub">a slow terminal · prints 1 character per ms</span></div>
+      <div class="policy">write() copies text into the output queue (24 characters) and returns. When the queue is full the writer blocks, and wakes once it drains to 16. Keyboard echo goes into the same queue.</div>
+      <div class="screen" id="screen"></div>
+      <div><span class="lbl">Output queue</span><div class="bytes" id="oq"></div><div class="cap" style="margin-top:4px"><i id="oqcap"></i></div></div>
+      <div><span class="lbl">Writers blocked on a full queue</span><div class="chips" id="ow"></div></div>
+      <div class="stats" id="ostats"></div>
+    </section>
+  </div>
+
+  <section class="card">
+    <div class="chead"><h2>Timeline</h2><span class="sub">last 120 ms</span></div>
+    <div class="scroll"><svg id="timeline" viewBox="0 0 900 200"></svg></div>
+    <div class="legend">
+      <span><i style="background:var(--run)"></i>Running (on the CPU lane: the running thread's colour)</span>
+      <span><i style="background:var(--readyfill);border:1px solid var(--ready)"></i>Ready</span>
+      <span><i style="background:var(--blk)"></i>Blocked on I/O</span>
+      <span><i style="background:var(--run);opacity:.45"></i>Polling (busy-waiting)</span>
+      <span><i style="background:var(--irq)"></i>CPU handling an interrupt</span>
+      <span><i style="background:var(--disk)"></i>Disk busy</span>
+      <span><i style="background:var(--net)"></i>Network card busy</span>
+      <span><i style="background:var(--disp)"></i>Display printing</span>
+      <span><i style="background:var(--kbd);border-radius:50%;width:9px"></i>Key pressed</span>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="chead"><h2>What just happened</h2><span class="sub"><kbd>Space</kbd> play or pause · <kbd>S</kbd> step</span></div>
+    <ol id="log" reversed></ol>
+  </section>
+</main>
+
+<script>
+(function(){
+"use strict";
+/*ENGINE START*/
+const PCOL = ["#D1495B","#2E7FD6","#2A9D5C","#C2560C","#8E44AD","#0E8AA0","#B8860B","#C0397A"];
+const OUTCAP = 24, LOWWATER = 16, RETX = 20, RD_DL = 15, WR_DL = 100;
+
+const PROGRAMS = {
+  sh: { file: "./sh", what: "a shell: reads commands from the keyboard, prints to the screen",
+    lines: ["while (more) {", "  write(STDOUT, \"$ \", 2);", "  n = read(STDIN, line, 64);", "  run(line);", "  write(STDOUT, result, len);", "}", "exit(0);"],
+    threads: [() => { const o = []; for (let i = 0; i < 3; i++) o.push({ k: "show", text: "$ ", line: 1 }, { k: "kread", line: 2 }, { k: "cpu", n: 3, line: 3 }, { k: "show", text: th => `ran ${(th.lastLine || "").trim() || "(nothing)"}\n`, line: 4 }); o.push({ k: "exit", line: 6 }); return o; }] },
+  cat: { file: "./cat notes.txt", what: "reads a file from disk, prints it on the screen",
+    lines: ["fd = open(\"notes.txt\", O_RDONLY);", "for (i = 0; i < 3; i++) {", "  n = read(fd, buf, 512);", "  write(STDOUT, buf, n);", "}", "exit(0);"],
+    threads: [c => { const o = [{ k: "cpu", n: 1, line: 0 }]; for (let i = 0; i < 3; i++) o.push({ k: "cpu", n: 1, line: 1 }, { k: "dread", track: 40 + i + c.off, line: 2 }, { k: "show", text: `notes ${i + 1}: buy milk, call mum, finish OS lab\n`, line: 3 }); o.push({ k: "exit", line: 5 }); return o; }] },
+  cp: { file: "./cp a.dat b.dat", what: "copies a file: disk reads and disk writes",
+    lines: ["for (i = 0; i < 4; i++) {", "  n = read(src, buf, 512);", "  write(dst, buf, n);", "}", "exit(0);"],
+    threads: [c => { const o = []; for (let i = 0; i < 4; i++) o.push({ k: "cpu", n: 1, line: 0 }, { k: "dread", track: 30 + i + c.off, line: 1 }, { k: "dwrite", track: 160 + i + c.off, line: 2 }); o.push({ k: "exit", line: 4 }); return o; }] },
+  logger: { file: "./logger", what: "appends entries to a log file on disk",
+    lines: ["for (i = 0; i < 6; i++) {", "  entry = make_entry(i);", "  write(logfd, entry, 128);", "}", "exit(0);"],
+    threads: [c => { const o = []; for (let i = 0; i < 6; i++) o.push({ k: "cpu", n: 2, line: 1 }, { k: "dwrite", track: 120 + i + c.off, line: 2 }); o.push({ k: "exit", line: 4 }); return o; }] },
+  player: { file: "./player movie.mp4", what: "reads video frames from disk in order",
+    lines: ["for (f = 0; f < 6; f++) {", "  n = read(video, frame, 512);", "  decode(frame);", "}", "exit(0);"],
+    threads: [c => { const o = []; for (let f = 0; f < 6; f++) o.push({ k: "dread", track: 61 + f + c.off, line: 1 }, { k: "cpu", n: 3, line: 2 }); o.push({ k: "exit", line: 4 }); return o; }] },
+  httpd: { file: "./httpd", what: "a web server with 2 threads: network in, disk read, network out",
+    lines: ["/* both threads run this */", "for (r = 0; r < 4; r++) {", "  req = recv(sock, port 80);", "  path = parse(req);", "  n = read(file, buf, 512);", "  send(sock, buf, 8 KB);", "}", "exit_thread();"],
+    threads: [0, 1].map(ti => c => { const tr = ti ? [180, 55, 130, 10] : [70, 150, 20, 90]; const o = []; for (let r = 0; r < 4; r++) o.push({ k: "recv", port: 80, line: 2 }, { k: "cpu", n: 2, line: 3 }, { k: "dread", track: (tr[r] + c.off) % 200, line: 4 }, { k: "send", port: 80, kb: 8, line: 5 }); o.push({ k: "exit", line: 7 }); return o; }) },
+  chat: { file: "./chat", what: "a chat app with 2 threads: one receives messages, one sends what you type",
+    lines: ["void *receiver(void *a) {", "  for (m = 0; m < 3; m++) {", "    msg = recv(sock, port 5000);", "    write(STDOUT, msg, len);", "  }", "}", "void *sender(void *a) {", "  for (m = 0; m < 2; m++) {", "    n = read(STDIN, line, 64);", "    send(sock, line, 1 KB);", "  }", "}"],
+    threads: [
+      () => { const o = []; for (let m = 0; m < 3; m++) o.push({ k: "recv", port: 5000, line: 2 }, { k: "show", text: `friend: msg ${m + 1}\n`, line: 3 }); o.push({ k: "exit", line: 5 }); return o; },
+      () => { const o = []; for (let m = 0; m < 2; m++) o.push({ k: "kread", line: 8 }, { k: "send", port: 5000, kb: 1, line: 9 }); o.push({ k: "exit", line: 11 }); return o; }] },
+  compress: { file: "./compress big.tar", what: "CPU-bound: computes for a long time, prints once at the end",
+    lines: ["for (b = 0; b < 4; b++)", "  compress_block(b);", "write(STDOUT, \"compressed\\n\", 11);", "exit(0);"],
+    threads: [() => [{ k: "cpu", n: 6, line: 1 }, { k: "cpu", n: 6, line: 1 }, { k: "cpu", n: 6, line: 1 }, { k: "cpu", n: 6, line: 1 }, { k: "show", text: "compressed\n", line: 2 }, { k: "exit", line: 3 }]] },
+};
+
+const keysAt = (t, s) => [...s].map((ch, i) => ({ t: t + i * 2, ch }));
+const pk = (ts, port, kb) => ts.map(t => ({ t, port, kb: kb || 1 }));
+const SCENARIOS = {
+  all: { name: "1 · Everything at once", progs: ["sh", "cat", "httpd", "logger"],
+    packets: pk([8, 20, 32, 44, 56, 68, 80, 92], 80), keys: [...keysAt(12, "ls\n"), ...keysAt(70, "date\n"), ...keysAt(120, "who\n")],
+    tip: "Four programs share one CPU. The shell waits on the keyboard, cat and the logger use the disk and the screen, and the web server uses the network and the disk. Press Play and watch each device's queue." },
+  disk: { name: "2 · Disk: who goes first?", progs: ["cat", "cp", "player", "logger"], set: { dpol: "FIFO" },
+    tip: "Four programs all need the disk. Note the longest read wait and the tracks moved, then change the disk policy, press Reset, and compare SSTF, SCAN, C-SCAN and Deadline." },
+  net: { name: "3 · Web server meets a burst of requests", progs: ["httpd", "compress"], set: { sock: "4" },
+    packets: pk([3, 4, 5, 6, 7, 8, 9, 10], 80),
+    tip: "Eight requests arrive in 8 ms, but each one keeps a server thread busy for longer than that. Extra packets wait in the socket buffer; if it is full they are dropped and resent. Reset with a buffer of 1 and of 16." },
+  term: { name: "4 · Terminal: line mode or byte mode", progs: ["sh", "compress"], set: { tty: "line" },
+    keys: [...keysAt(6, "ls -l\n"), ...keysAt(50, "cat notes\n"), ...keysAt(100, "exit\n")],
+    tip: "In line mode the shell sleeps until Enter and wakes once per command. Switch to byte mode and Reset: it wakes for every key. You can also type into the keyboard box yourself." },
+  chat: { name: "5 · Chat: network and keyboard together", progs: ["chat", "compress"],
+    packets: pk([15, 45, 75], 5000), keys: [...keysAt(25, "hi!\n"), ...keysAt(60, "bye\n")],
+    tip: "One chat thread waits on the network, the other on the keyboard. Both stay blocked, using no CPU, until their device has something. Then try programmed I/O, where waiting means polling." },
+  dma: { name: "6 · Why DMA?", progs: ["cp", "compress"], set: { tech: "pio" },
+    tip: "Programmed I/O: the copy thread polls the disk and holds the CPU, so compress waits. Reset with interrupts (the CPU copies each block) and with DMA, and compare when compress finishes." },
+  empty: { name: "7 · Empty machine", progs: [], tip: "Start any programs with Add process and type on the keyboard. Every device setting can be changed while it runs." },
+};
+
+function newWorld(cfg) {
+  return { t: 0, cfg, procs: [], threads: [], readyQ: [], cur: null, qUsed: 0, isr: 0, isrDev: null, spin: null, letter: 0, lastRun: null,
+    disk: { q: [], req: null, left: 0, head: 100, dir: 1, waits: [], irq: 0, busy: 0, moved: 0 },
+    nic: { q: [], req: null, left: 0, sock: {}, arrivals: [], drops: 0, irq: 0, busy: 0, rx: 0, tx: 0 },
+    kbd: { inQ: [], waiters: [], script: [], typed: [], irq: 0, wakes: 0 },
+    disp: { outQ: [], screen: "", writers: [], irq: 0, busy: 0, blockedTicks: 0 },
+    cpu: { run: 0, isr: 0, spin: 0, idle: 0 }, hist: [], events: [], log: [] };
+}
+function say(W, html, warn) { W.log.push({ t: W.t, html, warn }); if (W.log.length > 150) W.log.shift(); }
+const tchip = th => `<span class="chip" style="--c:${th.p.color}">${th.id}</span>`;
+function addProcess(W, key) {
+  const prog = PROGRAMS[key]; const n = W.procs.filter(p => p.key === key).length;
+  const name = "ABCDEFGHJKLMNPQRSTUVWXYZ"[W.letter % 24];
+  const p = { pid: 100 + W.letter, key, name, color: PCOL[W.letter % PCOL.length], prog, threads: [], born: W.t, finish: null };
+  W.letter++; W.procs.push(p);
+  prog.threads.forEach((build, i) => {
+    const th = { id: name + (i + 1), p, ops: build({ off: n * 3 }), pc: 0, rem: 0, state: "ready", wait: null, sys: 0, outRest: null, partial: "", lastLine: "", port: null };
+    if (th.ops[0].k === "cpu") th.rem = th.ops[0].n;
+    p.threads.push(th); W.threads.push(th); W.readyQ.push(th);
+  });
+  say(W, `<b>${p.name}</b> (PID ${p.pid}) started <code>${esc(prog.file)}</code> with ${p.threads.length} thread${p.threads.length > 1 ? "s" : ""}: ${p.threads.map(tchip).join(" ")} join${p.threads.length > 1 ? "" : "s"} the ready queue.`);
+  return p;
+}
+function advance(th) { th.pc++; const op = th.ops[th.pc]; if (op && op.k === "cpu") th.rem = op.n; }
+function block(W, th, dev, desc) { th.state = "blocked"; th.wait = { dev, desc, since: W.t }; if (W.cur === th) W.cur = null; }
+function spinOn(W, th, dev, desc) { th.state = "spin"; th.wait = { dev, desc, since: W.t }; W.spin = th; W.cur = null; }
+function wake(W, th) { if (W.spin === th) W.spin = null; th.state = "ready"; th.wait = null; W.readyQ.push(th); }
+function irq(W, dev, cost) { W.events.push({ type: "irq", dev }); if (cost) { W.isr += cost; W.isrDev = dev; } }
+function diskSay(rw, track) { return rw === "r" ? `read track ${track}` : `write track ${track}`; }
+
+function execute(W, th) {
+  const op = th.ops[th.pc], tech = W.cfg.tech;
+  if (op.k === "cpu") { th.rem--; if (th.rem <= 0) advance(th); return; }
+  if (op.k === "exit") {
+    th.state = "exit"; th.wait = null; W.cur = null;
+    if (th.p.threads.every(x => x.state === "exit")) { th.p.finish = W.t + 1; say(W, `<b>${th.p.name}</b> (${esc(th.p.prog.file)}) finished at ${W.t + 1} ms.`); }
+    return;
+  }
+  th.sys++;
+  if (op.k === "dread" || op.k === "dwrite") {
+    const rw = op.k === "dread" ? "r" : "w";
+    W.disk.q.push({ th, track: op.track, rw, t0: W.t, sync: rw === "r" || tech === "pio" });
+    if (rw === "w" && tech !== "pio") { say(W, `${tchip(th)} write() to the disk: the data is copied into an OS buffer and the call returns at once. The disk writes track ${op.track} later.`); advance(th); return; }
+    if (tech === "pio") { spinOn(W, th, "disk", diskSay(rw, op.track)); say(W, `${tchip(th)} ${rw === "r" ? "read()" : "write()"} on the disk, track ${op.track}. Programmed I/O: it keeps the CPU and polls the controller until the disk is done.`, true); }
+    else { block(W, th, "disk", diskSay(rw, op.track)); say(W, `${tchip(th)} read() on the disk, track ${op.track}: Blocked. Its request joins the disk queue.`); }
+    return;
+  }
+  if (op.k === "recv") {
+    const buf = W.nic.sock[op.port] || (W.nic.sock[op.port] = []);
+    if (buf.length) { buf.shift(); say(W, `${tchip(th)} recv() on port ${op.port}: a packet was already waiting in the socket buffer, so it returns at once.`); advance(th); return; }
+    th.port = op.port;
+    if (tech === "pio") { spinOn(W, th, "net", `recv on port ${op.port}`); say(W, `${tchip(th)} recv() on port ${op.port}: nothing yet. Programmed I/O: it polls the network card and holds the CPU.`, true); }
+    else { block(W, th, "net", `recv on port ${op.port}`); say(W, `${tchip(th)} recv() on port ${op.port}: no packet yet, so it is Blocked until one arrives.`); }
+    return;
+  }
+  if (op.k === "send") {
+    W.nic.q.push({ kind: "tx", th, port: op.port, kb: op.kb, t0: W.t });
+    if (tech === "pio") { spinOn(W, th, "net", `send ${op.kb} KB`); say(W, `${tchip(th)} send() ${op.kb} KB: programmed I/O, so it feeds the card itself and holds the CPU until the data is sent.`, true); }
+    else { say(W, `${tchip(th)} send() ${op.kb} KB: copied to the card's send queue; the call returns while the card sends.`); advance(th); }
+    return;
+  }
+  if (op.k === "kread") {
+    const Q = W.kbd.inQ;
+    if (W.cfg.tty === "line") {
+      const i = Q.indexOf("\n");
+      if (i >= 0) { const line = Q.splice(0, i + 1).join(""); th.lastLine = line; say(W, `${tchip(th)} read() from the keyboard returns the line "${esc(line.trim())}" (${line.length} bytes).`); advance(th); return; }
+    } else if (Q.length) {
+      const ch = Q.shift();
+      if (ch === "\b") th.partial = th.partial.slice(0, -1); else th.partial += ch;
+      if (ch === "\n") { th.lastLine = th.partial; th.partial = ""; say(W, `${tchip(th)} read() returns 1 byte: Enter. The command "${esc(th.lastLine.trim())}" is complete.`); advance(th); }
+      else say(W, `${tchip(th)} read() returns 1 byte "${esc(ch)}" and must call read() again for the next key.`);
+      return;
+    }
+    if (!W.kbd.waiters.includes(th)) W.kbd.waiters.push(th);
+    block(W, th, "kbd", W.cfg.tty === "line" ? "read a line" : "read a key");
+    return;
+  }
+  if (op.k === "show") {
+    if (th.outRest == null) th.outRest = typeof op.text === "function" ? op.text(th) : op.text;
+    let copied = 0;
+    while (th.outRest.length && W.disp.outQ.length < OUTCAP) { W.disp.outQ.push(th.outRest[0]); th.outRest = th.outRest.slice(1); copied++; }
+    if (!th.outRest.length) { th.outRest = null; advance(th); return; }
+    if (!W.disp.writers.includes(th)) W.disp.writers.push(th);
+    block(W, th, "disp", `output queue full, ${th.outRest.length} characters still to copy`);
+    say(W, `${tchip(th)} write() to the screen: the output queue is full after ${copied} characters, so it is Blocked until the display catches up.`);
+  }
+}
+
+function cpuTick(W) {
+  let kind = "idle", who = null;
+  if (W.isr > 0) { W.isr--; kind = "isr"; }
+  else if (W.spin) { kind = "spin"; who = W.spin; }
+  else {
+    if (W.cur && W.cur.state !== "running") W.cur = null;
+    if (W.cur && W.qUsed >= W.cfg.quantum && W.readyQ.length) {
+      W.cur.state = "ready"; W.readyQ.push(W.cur); say(W, `${tchip(W.cur)} used its ${W.cfg.quantum} ms time slice. Timer interrupt: back of the ready queue.`); W.cur = null;
+    }
+    if (!W.cur && W.readyQ.length) {
+      W.cur = W.readyQ.shift(); W.cur.state = "running"; W.qUsed = 0;
+      if (W.lastRun !== W.cur) say(W, `CPU dispatched ${tchip(W.cur)} (context switch).`);
+    }
+    if (W.cur) { kind = "run"; who = W.cur; }
+  }
+  const row = {}; W.threads.forEach(th => { row[th.id] = th === who ? kind : th.state; });
+  W.cpu[kind]++;
+  if (kind === "run") { W.lastRun = who; execute(W, who); W.qUsed++; }
+  return { row, kind, who };
+}
+
+function pickDisk(W) {
+  const Q = W.disk.q, h = W.disk.head, pol = W.cfg.dpol; if (!Q.length) return null;
+  if (pol === "Deadline") {
+    let b = -1; Q.forEach((q, i) => { const lim = q.rw === "r" ? RD_DL : WR_DL; if (W.t - q.t0 >= lim && (b < 0 || q.t0 < Q[b].t0)) b = i; });
+    if (b >= 0) return Q.splice(b, 1)[0];
+  }
+  let idx = 0;
+  if (pol === "SSTF") Q.forEach((q, i) => { if (Math.abs(q.track - h) < Math.abs(Q[idx].track - h)) idx = i; });
+  else if (pol === "SCAN" || pol === "Deadline") {
+    const inDir = i => W.disk.dir > 0 ? Q[i].track >= h : Q[i].track <= h;
+    let c = Q.map((_, i) => i).filter(inDir);
+    if (!c.length) { W.disk.dir *= -1; c = Q.map((_, i) => i).filter(inDir); }
+    idx = c.reduce((b, i) => Math.abs(Q[i].track - h) < Math.abs(Q[b].track - h) ? i : b, c[0]);
+  } else if (pol === "CSCAN") {
+    let c = Q.map((_, i) => i).filter(i => Q[i].track >= h);
+    if (!c.length) c = Q.map((_, i) => i);
+    idx = c.reduce((b, i) => Q[i].track < Q[b].track ? i : b, c[0]);
+  }
+  return Q.splice(idx, 1)[0];
+}
+function diskTick(W) {
+  const D = W.disk;
+  if (D.req) {
+    D.busy++; D.left--;
+    if (D.left <= 0) {
+      const r = D.req; D.req = null; D.irq++;
+      irq(W, "disk", W.cfg.tech === "intr" ? 1 : 0);
+      W.events.push({ type: "disk", rw: r.rw });
+      if (r.rw === "r") D.waits.push(W.t + 1 - r.t0);
+      if (r.sync && (r.th.state === "blocked" || r.th.state === "spin") && r.th.wait && r.th.wait.dev === "disk") {
+        advance(r.th); wake(W, r.th);
+        say(W, `Disk interrupt: track ${r.track} is done${W.cfg.tech === "dma" ? " and already in memory, copied by DMA" : W.cfg.tech === "intr" ? "; the CPU spends 1 ms copying the block into memory" : ""}. ${tchip(r.th)} is Ready again after waiting ${W.t + 1 - r.t0} ms.`);
+      } else if (r.rw === "w") say(W, `Disk interrupt: track ${r.track} has been written for ${tchip(r.th)}.`);
+    }
+  }
+  if (!D.req) {
+    const r = pickDisk(W);
+    if (r) { D.left = 2 + Math.ceil(Math.abs(r.track - D.head) / 20); D.moved += Math.abs(r.track - D.head); if (r.track !== D.head) D.dir = r.track > D.head ? 1 : -1; D.head = r.track; D.req = r; W.events.push({ type: "dstart", rw: r.rw }); }
+  }
+}
+function nicTick(W) {
+  const N = W.nic;
+  N.arrivals = N.arrivals.filter(a => { if (a.t > W.t) return true; N.q.push({ kind: "rx", port: a.port, kb: a.kb, tries: a.tries || 0, t0: W.t }); return false; });
+  if (N.req) {
+    N.busy++; N.left--;
+    if (N.left <= 0) {
+      const r = N.req; N.req = null; N.irq++;
+      irq(W, "net", W.cfg.tech === "intr" ? Math.max(1, Math.ceil(r.kb / 2)) : 0);
+      W.events.push({ type: r.kind });
+      if (r.kind === "tx") {
+        N.tx++;
+        if (r.th.state === "spin" && r.th.wait && r.th.wait.dev === "net") { advance(r.th); wake(W, r.th); say(W, `The network card sent ${r.kb} KB for ${tchip(r.th)}, so it can stop polling.`); }
+      } else {
+        N.rx++;
+        const waiter = W.threads.find(th => (th.state === "blocked" || th.state === "spin") && th.wait && th.wait.dev === "net" && th.port === r.port && th.ops[th.pc].k === "recv");
+        if (waiter) { advance(waiter); wake(W, waiter); say(W, `A packet for port ${r.port} arrived. Network interrupt: ${tchip(waiter)} was waiting in recv(), so it gets the packet and is Ready.`); }
+        else {
+          const buf = N.sock[r.port] || (N.sock[r.port] = []);
+          if (buf.length < W.cfg.sock) { buf.push(r); say(W, `A packet for port ${r.port} arrived while no thread was waiting. It is kept in the socket buffer (${buf.length}/${W.cfg.sock}).`); }
+          else { N.drops++; W.events.push({ type: "drop" }); if (r.tries < 6) N.arrivals.push({ t: W.t + 1 + RETX, port: r.port, kb: r.kb, tries: r.tries + 1 }); say(W, `A packet for port ${r.port} arrived but the socket buffer is full (${W.cfg.sock}). It is dropped; the sender will resend it in ${RETX} ms.`, true); }
+        }
+      }
+    }
+  }
+  if (!N.req && N.q.length) {
+    let i = N.q.findIndex(x => x.kind === "rx"); if (i < 0) i = 0;
+    const r = N.q.splice(i, 1)[0]; N.req = r; N.left = r.kind === "rx" ? 1 : Math.max(1, Math.ceil(r.kb / 4));
+    W.events.push({ type: r.kind + "start" });
+  }
+}
+function keyIn(W, ch) {
+  const K = W.kbd; K.irq++; irq(W, "kbd", 0); W.events.push({ type: "key", ch });
+  if (ch === "\b" && W.cfg.tty === "line") {
+    const i = K.inQ.length - 1;
+    if (i >= 0 && K.inQ[i] !== "\n") { K.inQ.pop(); W.disp.outQ.push("\b"); say(W, "Backspace: in line mode the OS removes the last character itself. The program never sees it."); }
+    return;
+  }
+  K.inQ.push(ch); W.disp.outQ.push(ch);
+  const ready = W.cfg.tty === "line" ? ch === "\n" : true;
+  if (ready && K.waiters.length) {
+    const th = K.waiters.shift(); K.wakes++; wake(W, th);
+    say(W, `Keyboard interrupt: ${ch === "\n" ? "Enter" : `"${esc(ch)}"`}. ${tchip(th)} was waiting in read(), so it wakes up.`);
+  }
+}
+function kbdTick(W) {
+  const due = W.kbd.script.filter(k => k.t === W.t);
+  W.kbd.script = W.kbd.script.filter(k => k.t !== W.t);
+  due.forEach(k => keyIn(W, k.ch));
+  if (W.kbd.typed.length) keyIn(W, W.kbd.typed.shift());
+}
+function dispTick(W) {
+  const D = W.disp;
+  if (D.outQ.length) {
+    const ch = D.outQ.shift(); D.busy++; D.irq++;
+    if (ch === "\b") D.screen = D.screen.slice(0, -1); else D.screen += ch;
+    if (D.screen.length > 4000) D.screen = D.screen.slice(-3000);
+    W.events.push({ type: "char", ch }); irq(W, "disp", 0);
+  }
+  if (D.writers.length) D.blockedTicks++;
+  while (D.writers.length && D.outQ.length <= LOWWATER) {
+    const th = D.writers.shift(); wake(W, th);
+    say(W, `The display drained its output queue to ${D.outQ.length} characters. ${tchip(th)} wakes to copy the rest of its text.`);
+  }
+}
+function step(W) {
+  W.events = [];
+  kbdTick(W);
+  const c = cpuTick(W);
+  diskTick(W); nicTick(W); dispTick(W);
+  W.lastWho = c.who;
+  W.hist.push({ row: c.row, cpu: c.kind, who: c.who ? c.who.id : null, disk: W.disk.req ? W.disk.req.rw : null, net: W.nic.req ? W.nic.req.kind : null, disp: W.events.some(e => e.type === "char"), key: W.events.some(e => e.type === "key") });
+  if (W.hist.length > 400) W.hist.shift();
+  W.t++;
+  return W.events;
+}
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])).replace(/\n/g, "⏎"); }
+/*ENGINE END*/
+
+const $ = s => document.querySelector(s);
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+let W, timer = null, scenarioKey = "all";
+const cfg = { quantum: 4, tech: "dma", dpol: "FIFO", sock: 4, tty: "line" };
+
+Object.entries(SCENARIOS).forEach(([k, s]) => $("#scenario").insertAdjacentHTML("beforeend", `<option value="${k}">${s.name}</option>`));
+Object.entries(PROGRAMS).forEach(([k, p]) => $("#prog").insertAdjacentHTML("beforeend", `<option value="${k}">${esc(p.file)} · ${p.what}</option>`));
+
+const DPOL = {
+  FIFO: "FIFO serves requests in the order they arrive. Fair, but the arm may swing back and forth across the disk.",
+  SSTF: "SSTF always picks the request closest to the arm. Little arm movement, but a far request can wait a long time.",
+  SCAN: "SCAN sweeps in one direction serving every request on the way, then turns around, like an elevator.",
+  CSCAN: "C-SCAN only serves while sweeping toward higher tracks, then jumps back to the lowest request. Waits are more even.",
+  Deadline: `Deadline works like SCAN, but a read older than ${RD_DL} ms or a write older than ${WR_DL} ms is served first. Reads come first because a thread is blocked on each one; writes were already copied into OS buffers.`,
+};
+const TTY = {
+  line: "Line mode (canonical): the OS collects characters and handles Backspace itself. A reader wakes once, when Enter arrives, and gets the whole line.",
+  byte: "Byte mode (raw): every key wakes the reader, which gets one byte per read() and must call read() again. Editors and games work like this.",
+};
+
+/* ---------- machine view ---------- */
+const CTL = { disk: 120, kbd: 340, net: 560, disp: 780 };
+function machineSVG() {
+  const t = (x, y, s, o = {}) => `<text x="${x}" y="${y}" text-anchor="${o.a || "middle"}" font-family="var(--sans)" font-size="${o.s || 14}" font-weight="${o.w || 400}" fill="${o.f || "var(--ink)"}" ${o.id ? `id="${o.id}"` : ""}>${s}</text>`;
+  const box = (x, y, w, h, stroke, id, fill) => `<rect ${id ? `id="${id}"` : ""} x="${x}" y="${y}" width="${w}" height="${h}" rx="9" fill="${fill || "var(--panel)"}" stroke="${stroke}" stroke-width="1.5"/>`;
+  let s = "";
+  s += box(40, 18, 180, 62, "var(--ink)", "m-cpu") + t(130, 44, "CPU", { w: 700 }) + t(130, 66, "~0.3 ns per cycle", { s: 12, f: "var(--muted)", id: "m-cpu-sub" });
+  s += box(640, 18, 220, 62, "var(--ready)", "m-mem", "var(--readyfill)") + t(750, 44, "Main memory", { w: 700 }) + t(750, 66, "OS buffers and queues · ~100 ns", { s: 12, f: "var(--muted)" });
+  s += `<line x1="20" y1="120" x2="880" y2="120" stroke="var(--ink)" stroke-width="4" stroke-linecap="round"/>` + t(880, 112, "System bus", { s: 12, f: "var(--muted)", a: "end" });
+  s += `<line x1="130" y1="80" x2="130" y2="118" stroke="var(--ink)"/><line x1="750" y1="80" x2="750" y2="118" stroke="var(--ink)"/>`;
+  [["disk", "Disk controller", "Hard disk", "var(--disk)"], ["kbd", "Keyboard controller", "Keyboard", "var(--kbd)"], ["net", "Network card", "Network", "var(--net)"], ["disp", "Display controller", "Screen", "var(--disp)"]].forEach(([k, name, d, col]) => {
+    const cx = CTL[k];
+    s += `<line x1="${cx}" y1="122" x2="${cx}" y2="160" stroke="var(--ink)"/>`;
+    s += box(cx - 100, 160, 200, 56, col, "m-c-" + k) + t(cx, 183, name, { w: 700 }) + t(cx, 203, "", { s: 12, f: "var(--muted)", id: "m-q-" + k });
+    s += `<line x1="${cx}" y1="216" x2="${cx}" y2="250" stroke="${col}" stroke-width="1.5"/>`;
+    s += box(cx - 75, 250, 150, 36, col, "m-d-" + k, "var(--bg)") + t(cx, 273, d, { s: 13 });
+  });
+  s += `<g id="m-tokens"></g>`;
+  $("#machine").innerHTML = s;
+}
+function machineLabels() {
+  const set = (id, s) => { const e = document.getElementById(id); if (e) e.textContent = s; };
+  const how = cfg.tech === "dma" ? "DMA" : cfg.tech === "intr" ? "interrupt-driven" : "polled";
+  set("m-q-disk", `${how} · queue ${W.disk.q.length + (W.disk.req ? 1 : 0)}`);
+  set("m-q-kbd", `interrupt per key · ${W.kbd.inQ.length} queued`);
+  set("m-q-net", `${how} · queue ${W.nic.q.length + (W.nic.req ? 1 : 0)}`);
+  set("m-q-disp", `output queue ${W.disp.outQ.length}/${OUTCAP}`);
+  const last = W.hist[W.hist.length - 1];
+  set("m-cpu-sub", last && last.cpu === "isr" ? "handling an interrupt" : W.spin ? `${W.spin.id} polling a device` : W.cur ? `running ${W.cur.id}` : last && last.cpu === "run" && W.lastWho ? `ran ${W.lastWho.id}` : "idle");
+}
+const PATHS = {
+  diskIn: tech => tech === "dma" ? [[120, 250], [120, 132], [740, 132], [740, 80]] : [[120, 250], [120, 132], [140, 132], [140, 80]],
+  diskOut: () => [[740, 80], [740, 132], [120, 132], [120, 250]],
+  netIn: tech => tech === "dma" ? [[560, 250], [560, 132], [760, 132], [760, 80]] : [[560, 250], [560, 132], [150, 132], [150, 80]],
+  netOut: () => [[760, 80], [760, 140], [560, 140], [560, 250]],
+  key: () => [[340, 250], [340, 140], [120, 140], [120, 80]],
+  char: () => [[780, 80], [780, 140], [780, 250]],
+};
+function token(points, color, dur) {
+  if (reduced) return;
+  const g = document.getElementById("m-tokens"); if (!g) return;
+  const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+  c.setAttribute("r", 6); c.setAttribute("fill", color); c.setAttribute("stroke", css("--panel")); c.setAttribute("stroke-width", 2);
+  c.setAttribute("cx", points[0][0]); c.setAttribute("cy", points[0][1]);
+  g.appendChild(c);
+  const segs = []; let L = 0;
+  for (let i = 1; i < points.length; i++) { const d = Math.hypot(points[i][0] - points[i - 1][0], points[i][1] - points[i - 1][1]); segs.push(d); L += d; }
+  let t0 = null;
+  const f = ts => {
+    if (t0 === null) t0 = ts; let p = Math.min(1, (ts - t0) / dur) * L, i = 0;
+    while (i < segs.length - 1 && p > segs[i]) { p -= segs[i]; i++; }
+    const a = points[i], b = points[i + 1], r = segs[i] ? Math.min(1, p / segs[i]) : 1;
+    c.setAttribute("cx", a[0] + (b[0] - a[0]) * r); c.setAttribute("cy", a[1] + (b[1] - a[1]) * r);
+    if (ts - t0 < dur) requestAnimationFrame(f); else c.remove();
+  };
+  requestAnimationFrame(f);
+}
+function flash(id, color) {
+  const e = document.getElementById(id); if (!e || e.dataset.flash) return;
+  const old = e.getAttribute("stroke"), ow = e.getAttribute("stroke-width");
+  e.dataset.flash = "1"; e.setAttribute("stroke", color); e.setAttribute("stroke-width", "3.5");
+  setTimeout(() => { e.setAttribute("stroke", old); e.setAttribute("stroke-width", ow); delete e.dataset.flash; }, 260);
+}
+function animateEvents(evs) {
+  const dur = Math.max(180, Math.min(700, +$("#speed").value * 1.6));
+  let chars = 0;
+  evs.forEach(e => {
+    if (e.type === "irq") { flash("m-c-" + e.dev, css("--irq")); flash("m-cpu", css("--irq")); }
+    if (e.type === "disk" && e.rw === "r") token(PATHS.diskIn(cfg.tech), css("--disk"), dur);
+    if (e.type === "dstart" && e.rw === "w") token(PATHS.diskOut(), css("--disk"), dur);
+    if (e.type === "rx") token(PATHS.netIn(cfg.tech), css("--net"), dur);
+    if (e.type === "txstart") token(PATHS.netOut(), css("--net"), dur);
+    if (e.type === "key") token(PATHS.key(), css("--kbd"), dur * .7);
+    if (e.type === "char" && chars++ === 0) token(PATHS.char(), css("--disp"), dur * .6);
+  });
+}
+
+/* ---------- panels ---------- */
+const STATE_TXT = { ready: ["Ready", "--ready"], running: ["Running", "--run"], blocked: ["Blocked", "--blk"], spin: ["Polling", "--run"], exit: ["Done", "--exit"] };
+const DEVNAME = { disk: "disk", net: "network", kbd: "keyboard", disp: "display" };
+function renderProcs() {
+  if (!W.procs.length) { $("#procs").innerHTML = '<p class="empty">No processes yet. Pick a program under Add process and press Start.</p>'; return; }
+  $("#procs").innerHTML = W.procs.map(p => {
+    const marks = {};
+    p.threads.forEach(th => { if (th.state === "exit") return; const op = th.ops[th.pc]; if (op) (marks[op.line] = marks[op.line] || []).push(th); });
+    const rows = p.prog.lines.map((txt, i) => {
+      const ts = marks[i] || [], cls = ts.some(th => th.state === "running" || th.state === "spin") ? "hot" : ts.some(th => th.state === "blocked") ? "wait" : "";
+      return `<div class="row ${cls}"><span class="ln">${i + 1}</span><span>${esc(txt)}</span><span>${ts.map(th => `<span class="pcm">${th.id}</span>`).join("")}</span></div>`;
+    }).join("");
+    const trs = p.threads.map(th => {
+      const [lab, col] = STATE_TXT[th.state];
+      const why = th.state === "blocked" ? `on the ${DEVNAME[th.wait.dev]}: ${th.wait.desc} · ${W.t - th.wait.since} ms` : th.state === "spin" ? `polling the ${DEVNAME[th.wait.dev]}: ${th.wait.desc}` : th.state === "exit" ? "" : `${th.sys} system calls so far`;
+      return `<div class="trow">${tchip(th)}<span class="pill" style="--sc:var(${col})">${lab}</span><span class="why">${why}</span></div>`;
+    }).join("");
+    return `<div class="proc" style="--pc:${p.color}"><div class="ph"><b>${p.name}</b><code>PID ${p.pid} · ${esc(p.prog.file)}</code>${p.finish != null ? `<span class="done">finished at ${p.finish} ms</span>` : ""}</div><div class="code">${rows}</div>${trs}</div>`;
+  }).join("");
+}
+function renderCPU() {
+  const last = W.hist[W.hist.length - 1], kind = last ? last.cpu : "idle";
+  let core;
+  if (kind === "isr") core = `<div class="core isr"><b>Handling an interrupt</b><br><span class="sub">copying data for the ${DEVNAME[W.isrDev] || "device"} (interrupt-driven I/O)</span></div>`;
+  else if (kind === "spin" && W.spin) core = `<div class="core spin">${tchip(W.spin)} <b>is polling</b><br><span class="sub">busy-waiting on the ${DEVNAME[W.spin.wait.dev]}: no useful work gets done</span></div>`;
+  else if (kind === "run" && W.lastWho && W.lastWho !== W.cur) core = `<div class="core on">${tchip(W.lastWho)} ran in the last ms<br><span class="sub">${W.lastWho.state === "blocked" ? `then made a system call and is now Blocked on the ${DEVNAME[W.lastWho.wait.dev]}` : W.lastWho.state === "exit" ? "then exited" : W.lastWho.state === "spin" ? "and is now polling a device" : "and went back to the ready queue"}. The scheduler picks the next thread now.</span></div>`;
+  else if (W.cur) core = `<div class="core on">${tchip(W.cur)} running <span class="qdots">${Array.from({ length: cfg.quantum }, (_, i) => `<i class="${i < W.qUsed ? "on" : ""}"></i>`).join("")}</span><br><span class="sub">line ${(W.cur.ops[W.cur.pc] || {}).line + 1} of ${esc(W.cur.p.prog.file)}</span></div>`;
+  else core = `<div class="core"><b>Idle</b><br><span class="sub">every thread is blocked or done</span></div>`;
+  const n = W.cpu.run + W.cpu.isr + W.cpu.spin + W.cpu.idle || 1;
+  const bar = (lab, v, col) => `<div class="bar"><span>${lab}</span><span class="tr"><i style="width:${(v / n * 100).toFixed(1)}%;background:var(${col})"></i></span><span class="v">${Math.round(v / n * 100)}%</span></div>`;
+  const blocked = W.threads.filter(th => th.state === "blocked");
+  $("#cpu").innerHTML = `<h3>CPU</h3>${core}
+    <h3>Ready queue · round robin, ${cfg.quantum} ms slice</h3><div class="chips">${W.readyQ.length ? W.readyQ.map(tchip).join("") : '<span class="empty">empty</span>'}</div>
+    <h3>Blocked, by device</h3>${["disk", "net", "kbd", "disp"].map(d => { const b = blocked.filter(th => th.wait.dev === d); return `<div class="chips"><span class="sub" style="min-width:72px">${DEVNAME[d]}</span>${b.length ? b.map(tchip).join("") : '<span class="empty">none</span>'}</div>`; }).join("")}
+    <h3>Where the CPU time went</h3><div class="bars">${bar("Useful work", W.cpu.run, "--run")}${bar("Interrupts", W.cpu.isr, "--irq")}${bar("Polling", W.cpu.spin, "--blk")}${bar("Idle", W.cpu.idle, "--line")}</div>`;
+}
+function renderDevices() {
+  const D = W.disk;
+  $("#dpolTxt").textContent = DPOL[cfg.dpol];
+  const pos = tr => (tr / 199 * 100).toFixed(2) + "%";
+  $("#arm").innerHTML = `<span class="ax" style="left:4px">0</span><span class="ax" style="right:4px">199</span>` +
+    D.q.map(q => `<span class="rq ${q.rw === "w" ? "w" : ""}" style="left:${pos(q.track)};--c:${q.th.p.color}" title="${q.th.id} ${q.rw === "r" ? "read" : "write"} track ${q.track}"></span>`).join("") +
+    `<span class="hd" style="left:${pos(D.head)}" title="arm at track ${D.head}"></span>`;
+  const qc = q => `<span class="chip" style="--c:${q.th.p.color}">${q.th.id} <small>${q.rw === "r" ? "read" : "write"} ${q.track} · ${W.t - q.t0} ms</small></span>`;
+  $("#dq").innerHTML = (D.req ? `<span class="sub">serving</span> ${qc(D.req)} <span class="sub">waiting:</span> ` : "") + (D.q.length ? D.q.map(qc).join("") : '<span class="empty">no requests waiting</span>');
+  const avg = D.waits.length ? (D.waits.reduce((a, b) => a + b, 0) / D.waits.length).toFixed(1) : "—", worst = D.waits.length ? Math.max(...D.waits) : "—";
+  $("#dstats").innerHTML = `<span class="stat">arm at <b>${D.head}</b></span><span class="stat">tracks moved <b>${D.moved}</b></span><span class="stat">average read wait <b>${avg}</b> ms</span><span class="stat">longest read wait <b>${worst}</b> ms</span><span class="stat">interrupts <b>${D.irq}</b></span>`;
+
+  const N = W.nic;
+  const ports = [...new Set([...Object.keys(N.sock).map(Number), ...W.threads.flatMap(th => th.ops.filter(o => o.port && o.k === "recv").map(o => o.port))])];
+  $("#ports").innerHTML = ports.length ? ports.map(pt => {
+    const buf = N.sock[pt] || [], waiting = W.threads.filter(th => th.wait && th.wait.dev === "net" && th.port === pt && th.ops[th.pc].k === "recv");
+    return `<div class="row2"><span class="lbl" style="min-width:80px">port ${pt}</span><span class="slots" title="socket buffer">${Array.from({ length: cfg.sock }, (_, i) => `<i class="${i < buf.length ? "f" : ""}"></i>`).join("")}</span><span class="sub">${buf.length} buffered · in recv():</span>${waiting.length ? waiting.map(tchip).join(" ") : '<span class="empty">no one</span>'}</div>`;
+  }).join("") : '<p class="empty">No program is receiving from the network.</p>';
+  const nc = q => q.kind === "rx" ? `<span class="chip" style="--c:var(--net)">in <small>port ${q.port}</small></span>` : `<span class="chip" style="--c:${q.th.p.color}">out ${q.th.id} <small>${q.kb} KB</small></span>`;
+  const next = N.arrivals.filter(a => a.t >= W.t).sort((a, b) => a.t - b.t)[0];
+  $("#nq").innerHTML = (N.req ? `<span class="sub">${N.req.kind === "rx" ? "receiving" : "sending"}</span> ${nc(N.req)} <span class="sub">waiting:</span> ` : "") + (N.q.length ? N.q.map(nc).join("") : '<span class="empty">nothing waiting</span>') + (next ? ` <span class="sub">· next packet due at ${next.t} ms</span>` : "");
+  $("#nstats").innerHTML = `<span class="stat">received <b>${N.rx}</b></span><span class="stat">sent <b>${N.tx}</b></span><span class="stat ${N.drops ? "bad" : ""}">dropped <b>${N.drops}</b></span><span class="stat">interrupts <b>${N.irq}</b></span>`;
+
+  const K = W.kbd, show = c => c === " " ? "␣" : c === "\n" ? "⏎" : c === "\b" ? "⌫" : esc(c);
+  $("#ttyTxt").textContent = TTY[cfg.tty];
+  $("#kq").innerHTML = K.inQ.length ? K.inQ.map(c => `<span class="byte">${show(c)}</span>`).join("") : '<span class="empty">empty</span>';
+  $("#kw").innerHTML = K.waiters.length ? K.waiters.map(tchip).join("") : '<span class="empty">none</span>';
+  const nextKey = K.script.length ? Math.min(...K.script.map(k => k.t)) : null;
+  $("#kstats").innerHTML = `<span class="stat">interrupts <b>${K.irq}</b></span><span class="stat">reader wake-ups <b>${K.wakes}</b></span>${nextKey != null ? `<span class="stat">next scripted key at <b>${nextKey}</b> ms</span>` : ""}`;
+
+  const O = W.disp;
+  const sc = $("#screen"); sc.innerHTML = esc(O.screen).replace(/⏎/g, "\n") + '<span class="cur"></span>'; sc.scrollTop = sc.scrollHeight;
+  $("#oq").innerHTML = O.outQ.length ? O.outQ.map(c => `<span class="byte o">${show(c)}</span>`).join("") : '<span class="empty">empty</span>';
+  $("#oqcap").style.width = (O.outQ.length / OUTCAP * 100) + "%";
+  $("#ow").innerHTML = O.writers.length ? O.writers.map(tchip).join("") : '<span class="empty">none</span>';
+  $("#ostats").innerHTML = `<span class="stat">characters printed <b>${O.irq}</b></span><span class="stat">ms with a writer blocked <b>${O.blockedTicks}</b></span>`;
+}
+function renderTimeline() {
+  const H = W.hist.slice(-120), off = W.t - H.length, px = 7, x0 = 90, lh = 16, gap = 5;
+  const lanes = [...W.threads.map(th => ({ k: "t", th })), { k: "cpu" }, { k: "disk" }, { k: "net" }, { k: "disp" }, { k: "kbd" }];
+  const Wd = x0 + 120 * px + 20, Ht = 10 + lanes.length * (lh + gap) + 22;
+  const svg = $("#timeline"); svg.setAttribute("viewBox", `0 0 ${Wd} ${Ht}`); svg.style.width = Wd + "px"; svg.style.minWidth = Wd + "px";
+  const tx = (x, y, s, o = {}) => `<text x="${x}" y="${y}" font-family="${o.m ? "var(--mono)" : "var(--sans)"}" font-size="${o.s || 12}" fill="${o.f || "var(--ink)"}" text-anchor="${o.a || "start"}" font-weight="${o.w || 400}">${s}</text>`;
+  const fill = { running: "var(--run)", run: "var(--run)", ready: "var(--readyfill)", blocked: "var(--blk)", spin: "var(--run)", isr: "var(--irq)" };
+  let s = "";
+  const ay = Ht - 6;
+  for (let k = Math.ceil(off / 10) * 10; k <= W.t; k += 10) { const x = x0 + (k - off) * px; s += `<line x1="${x}" y1="4" x2="${x}" y2="${ay - 12}" stroke="var(--soft)"/>` + tx(x, ay, k, { a: "middle", s: 10, f: "var(--muted)", m: true }); }
+  lanes.forEach((L, li) => {
+    const y = 8 + li * (lh + gap);
+    const label = L.k === "t" ? L.th.id : { cpu: "CPU", disk: "Disk", net: "Network", disp: "Display", kbd: "Keyboard" }[L.k];
+    s += tx(8, y + 12, label, { w: 700, f: L.k === "t" ? L.th.p.color : "var(--ink)" });
+    const val = h => L.k === "t" ? h.row[L.th.id] : L.k === "cpu" ? (h.cpu === "idle" ? null : h.cpu === "run" ? "run:" + h.who : h.cpu) : L.k === "disk" ? h.disk : L.k === "net" ? h.net : L.k === "disp" ? (h.disp ? 1 : null) : (h.key ? 1 : null);
+    let i = 0;
+    while (i < H.length) {
+      const v = val(H[i]); let e = i; while (e + 1 < H.length && val(H[e + 1]) === v) e++;
+      if (v != null && v !== "exit") {
+        if (L.k === "kbd") { for (let j = i; j <= e; j++) s += `<circle cx="${x0 + j * px + px / 2}" cy="${y + lh / 2}" r="3.5" fill="var(--kbd)"/>`; }
+        else {
+          const thc = L.k === "cpu" && String(v).startsWith("run:") ? (W.threads.find(x => x.id === v.slice(4)) || {}).p : null;
+          const f = thc ? "var(--run)" : L.k === "t" || L.k === "cpu" ? fill[v] : L.k === "disk" ? "var(--disk)" : L.k === "net" ? "var(--net)" : "var(--disp)";
+          const faded = v === "spin" || (L.k === "disk" && v === "w") || (L.k === "net" && v === "tx");
+          s += `<rect x="${x0 + i * px}" y="${y}" width="${(e - i + 1) * px}" height="${lh}" fill="${f}" ${faded ? 'fill-opacity=".5"' : ""} ${v === "ready" ? 'stroke="var(--ready)" stroke-width=".8"' : ""}/>`;
+          if (thc && (e - i + 1) * px >= 22) s += tx(x0 + (i + e + 1) * px / 2, y + 12, v.slice(4), { a: "middle", s: 10, w: 700, f: "#15202B" });
+        }
+      }
+      i = e + 1;
+    }
+  });
+  if (!H.length) s += tx(x0, 30, "Press Play or Step to start the clock.", { f: "var(--muted)" });
+  svg.innerHTML = s;
+}
+function renderLog() {
+  $("#log").innerHTML = W.log.slice(-60).reverse().map(l => `<li class="${l.warn ? "warn" : ""}"><span class="t">${l.t} ms</span><span>${l.html}</span></li>`).join("");
+}
+function render() { $("#tick").textContent = W.t; renderProcs(); renderCPU(); renderDevices(); renderTimeline(); renderLog(); machineLabels(); }
+
+/* ---------- control ---------- */
+function readCfg() { Object.assign(cfg, { quantum: +$("#quantum").value, tech: $("#tech").value, dpol: $("#dpol").value, sock: +$("#sock").value, tty: $("#tty").value }); }
+function load(key) {
+  stop(); scenarioKey = key; store.set("iolab-scn", key);
+  const sc = SCENARIOS[key];
+  if (sc.set) Object.entries(sc.set).forEach(([k, v]) => { const el = $("#" + k); if (el) el.value = v; });
+  readCfg();
+  W = newWorld(cfg);
+  (sc.progs || []).forEach(k => addProcess(W, k));
+  W.nic.arrivals = (sc.packets || []).map(a => ({ ...a }));
+  W.kbd.script = (sc.keys || []).map(k => ({ ...k }));
+  $("#tip").textContent = sc.tip;
+  machineSVG(); render();
+}
+function tickOnce() { const ev = step(W); render(); animateEvents(ev); }
+function stop() { if (timer) { clearInterval(timer); timer = null; } $("#btnPlay").textContent = "Play"; }
+function play() { if (timer) { stop(); return; } $("#btnPlay").textContent = "Pause"; timer = setInterval(tickOnce, +$("#speed").value); }
+$("#btnPlay").addEventListener("click", play);
+$("#btnStep").addEventListener("click", () => { stop(); tickOnce(); });
+$("#btnReset").addEventListener("click", () => load(scenarioKey));
+$("#scenario").addEventListener("change", e => load(e.target.value));
+$("#speed").addEventListener("change", () => { if (timer) { stop(); play(); } });
+$("#btnAdd").addEventListener("click", () => { addProcess(W, $("#prog").value); render(); });
+["quantum", "tech", "dpol", "sock", "tty"].forEach(id => $("#" + id).addEventListener("change", e => {
+  readCfg(); say(W, `Setting changed: ${esc(e.target.options[e.target.selectedIndex].text)}.`); render();
+}));
+const kin = $("#kbdIn");
+kin.addEventListener("keydown", e => {
+  if (e.key === "Enter") { e.preventDefault(); W.kbd.typed.push("\n"); if (!timer) tickOnce(); }
+  else if (e.key === "Backspace" && !kin.value) { e.preventDefault(); W.kbd.typed.push("\b"); if (!timer) tickOnce(); }
+});
+kin.addEventListener("input", () => { const v = kin.value; kin.value = ""; [...v].forEach(ch => W.kbd.typed.push(ch)); if (!timer) tickOnce(); });
+document.addEventListener("keydown", e => {
+  if (e.target.closest && e.target.closest("input,select,textarea,button")) return;
+  if (e.code === "Space") { e.preventDefault(); play(); } else if (e.key === "s" || e.key === "S") { stop(); tickOnce(); }
+});
+const saved = store.get("iolab-scn");
+if (saved && SCENARIOS[saved]) $("#scenario").value = saved;
+load($("#scenario").value);
+})();
+</script>
+
+</body></html>
