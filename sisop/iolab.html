@@ -155,6 +155,14 @@ kbd{font-family:var(--mono);font-size:12px;border:1px solid var(--line);border-b
         <option value="dma" selected>DMA (device copies)</option>
       </select>
     </div>
+    <div class="group">
+      <span class="gl">Threads are</span>
+      <select id="model" aria-label="Thread model">
+        <option value="1:1" selected>Kernel threads (one-to-one)</option>
+        <option value="N:1">User-level threads (many-to-one)</option>
+      </select>
+      <span class="gl">applies on Reset</span>
+    </div>
   </div>
   <p class="tip" id="tip"></p>
 
@@ -201,10 +209,15 @@ kbd{font-family:var(--mono);font-size:12px;border:1px solid var(--line);border-b
       <div class="row2"><span class="lbl">Terminal mode</span>
         <select id="tty" aria-label="Terminal mode"><option value="line" selected>Line mode: read() returns a whole line</option><option value="byte">Byte mode: read() returns each key</option></select></div>
       <div class="policy" id="ttyTxt"></div>
+      <div class="row2"><label class="lbl" for="fgSel">Foreground process</label>
+        <select id="fgSel" aria-label="Foreground process"></select>
+        <button id="btnFg">Bring to foreground (fg)</button></div>
+      <div class="policy">Only the foreground process may read the keyboard. A background process that calls read() is stopped with SIGTTIN, all of its threads, until it is brought to the foreground. Inside the foreground process, waiting threads are served first come, first served.</div>
       <div><label class="lbl" for="kbdIn">Type here (you are the keyboard)</label>
         <input type="text" id="kbdIn" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="type a command, press Enter" style="width:100%;font-family:var(--mono)"></div>
       <div><span class="lbl">Input queue in the OS</span><div class="bytes" id="kq"></div></div>
-      <div><span class="lbl">Threads waiting in read()</span><div class="chips" id="kw"></div></div>
+      <div><span class="lbl">Foreground threads waiting in read()</span><div class="chips" id="kw"></div></div>
+      <div><span class="lbl">Stopped in the background (SIGTTIN)</span><div class="chips" id="ks"></div></div>
       <div class="stats" id="kstats"></div>
     </section>
 
@@ -225,6 +238,8 @@ kbd{font-family:var(--mono);font-size:12px;border:1px solid var(--line);border-b
       <span><i style="background:var(--run)"></i>Running (on the CPU lane: the running thread's colour)</span>
       <span><i style="background:var(--readyfill);border:1px solid var(--ready)"></i>Ready</span>
       <span><i style="background:var(--blk)"></i>Blocked on I/O</span>
+      <span><i style="background:var(--blk);opacity:.4"></i>Stuck behind a sibling (user-level threads)</span>
+      <span><i style="background:var(--exit)"></i>Stopped (SIGTTIN)</span>
       <span><i style="background:var(--run);opacity:.45"></i>Polling (busy-waiting)</span>
       <span><i style="background:var(--irq)"></i>CPU handling an interrupt</span>
       <span><i style="background:var(--disk)"></i>Disk busy</span>
@@ -271,12 +286,27 @@ const PROGRAMS = {
     threads: [
       () => { const o = []; for (let m = 0; m < 3; m++) o.push({ k: "recv", port: 5000, line: 2 }, { k: "show", text: `friend: msg ${m + 1}\n`, line: 3 }); o.push({ k: "exit", line: 5 }); return o; },
       () => { const o = []; for (let m = 0; m < 2; m++) o.push({ k: "kread", line: 8 }, { k: "send", port: 5000, kb: 1, line: 9 }); o.push({ k: "exit", line: 11 }); return o; }] },
+  editor: { file: "./editor notes.txt", what: "3 threads: one reads keys, one autosaves to disk, one spell-checks",
+    lines: ["void *ui(void *a) {            /* thread 1 */", "  for (k = 0; k < 6; k++) {", "    n = read(STDIN, &key, 1);", "    insert_and_redraw(key);", "  }", "}", "void *autosave(void *a) {      /* thread 2 */", "  for (s = 0; s < 3; s++) {", "    data = serialize(doc);", "    write(fd, data, 512);", "  }", "}", "void *spell(void *a) {         /* thread 3 */", "  for (w = 0; w < 4; w++)", "    check_word(w);", "}"],
+    threads: [
+      () => { const o = []; for (let k = 0; k < 6; k++) o.push({ k: "kread", one: true, line: 2 }, { k: "cpu", n: 1, line: 3 }); o.push({ k: "exit", line: 5 }); return o; },
+      c => { const o = []; for (let i = 0; i < 3; i++) o.push({ k: "cpu", n: 3, line: 8 }, { k: "dwrite", track: 100 + i + c.off, line: 9 }); o.push({ k: "exit", line: 11 }); return o; },
+      () => [{ k: "cpu", n: 4, line: 14 }, { k: "cpu", n: 4, line: 14 }, { k: "cpu", n: 4, line: 14 }, { k: "cpu", n: 4, line: 14 }, { k: "exit", line: 15 }]] },
+  pool: { file: "./httpd-pool", what: "a web server with a pool of 4 threads, all waiting on port 80",
+    lines: ["/* 4 worker threads run this */", "for (r = 0; r < 2; r++) {", "  req = recv(sock, port 80);", "  path = parse(req);", "  n = read(file, buf, 512);", "  send(sock, buf, 8 KB);", "}", "exit_thread();"],
+    threads: [0, 1, 2, 3].map(ti => c => { const tr = [[70, 150], [180, 55], [20, 130], [90, 10]][ti]; const o = []; for (let r = 0; r < 2; r++) o.push({ k: "recv", port: 80, line: 2 }, { k: "cpu", n: 2, line: 3 }, { k: "dread", track: (tr[r] + c.off) % 200, line: 4 }, { k: "send", port: 80, kb: 8, line: 5 }); o.push({ k: "exit", line: 7 }); return o; }) },
+  wget: { file: "./wget -t3 big.iso", what: "3 threads each download part of a file and save it to disk",
+    lines: ["/* each thread fetches its own part */", "for (c = 0; c < 3; c++) {", "  chunk = recv(sock, port 8080);", "  verify(chunk);", "  write(out, chunk, 512);", "}", "exit_thread();"],
+    threads: [0, 1, 2].map(ti => c => { const o = []; for (let k = 0; k < 3; k++) o.push({ k: "recv", port: 8080, line: 2 }, { k: "cpu", n: 1, line: 3 }, { k: "dwrite", track: 190 - ti * 30 - k + c.off, line: 4 }); o.push({ k: "exit", line: 6 }); return o; }) },
+  quiz: { file: "./quiz &", what: "started in the background; wants to read an answer from the keyboard",
+    lines: ["write(STDOUT, \"quiz: answer? \", 14);", "n = read(STDIN, ans, 16);", "grade(ans);", "write(STDOUT, verdict, len);", "exit(0);"],
+    threads: [() => [{ k: "show", text: "[quiz] answer? ", line: 0 }, { k: "kread", line: 1 }, { k: "cpu", n: 2, line: 2 }, { k: "show", text: th => `[quiz] you said ${(th.lastLine || "").trim()}\n`, line: 3 }, { k: "exit", line: 4 }]] },
   compress: { file: "./compress big.tar", what: "CPU-bound: computes for a long time, prints once at the end",
     lines: ["for (b = 0; b < 4; b++)", "  compress_block(b);", "write(STDOUT, \"compressed\\n\", 11);", "exit(0);"],
     threads: [() => [{ k: "cpu", n: 6, line: 1 }, { k: "cpu", n: 6, line: 1 }, { k: "cpu", n: 6, line: 1 }, { k: "cpu", n: 6, line: 1 }, { k: "show", text: "compressed\n", line: 2 }, { k: "exit", line: 3 }]] },
 };
 
-const keysAt = (t, s) => [...s].map((ch, i) => ({ t: t + i * 2, ch }));
+const keysAt = (t, s, gap) => [...s].map((ch, i) => ({ t: t + i * (gap || 2), ch }));
 const pk = (ts, port, kb) => ts.map(t => ({ t, port, kb: kb || 1 }));
 const SCENARIOS = {
   all: { name: "1 · Everything at once", progs: ["sh", "cat", "httpd", "logger"],
@@ -295,11 +325,23 @@ const SCENARIOS = {
     tip: "One chat thread waits on the network, the other on the keyboard. Both stay blocked, using no CPU, until their device has something. Then try programmed I/O, where waiting means polling." },
   dma: { name: "6 · Why DMA?", progs: ["cp", "compress"], set: { tech: "pio" },
     tip: "Programmed I/O: the copy thread polls the disk and holds the CPU, so compress waits. Reset with interrupts (the CPU copies each block) and with DMA, and compare when compress finishes." },
-  empty: { name: "7 · Empty machine", progs: [], tip: "Start any programs with Add process and type on the keyboard. Every device setting can be changed while it runs." },
+  fg: { name: "8 · Foreground and background", progs: ["sh", { k: "quiz", bg: true }],
+    keys: [...keysAt(6, "ls\n"), ...keysAt(40, "jobs\n"), ...keysAt(80, "date\n")],
+    tip: "The shell is in the foreground and gets every command. ./quiz was started in the background, so when it calls read() it is stopped with SIGTTIN. Choose B under Foreground process, press fg, then type an answer and Enter." },
+  editor: { name: "9 · One process, three threads", progs: ["editor", "compress"], set: { tty: "byte", model: "1:1" },
+    keys: keysAt(8, "hello\n", 8),
+    tip: "The editor's UI thread blocks on the keyboard, while its autosave thread writes to disk and its spell-check thread computes. One thread waiting does not stop the others: each is scheduled on its own." },
+  pool: { name: "10 · Thread pool web server", progs: ["pool"], packets: pk([2, 3, 4, 5, 6, 7, 8, 9], 80),
+    tip: "Four worker threads all wait in recv() on port 80. Each request goes to the thread that has waited longest, so four requests are handled at once while the disk serves their reads. Add ./httpd (2 threads) as well and compare." },
+  wget: { name: "11 · Parallel download, three threads", progs: ["wget", "compress"], packets: pk([2, 5, 8, 11, 14, 17, 20, 23, 26], 8080),
+    tip: "Three threads of one process each wait for their own chunk on port 8080 and write it to disk. Network, disk and CPU all work at the same time." },
+  ult: { name: "12 · User-level threads: one blocks, all wait", progs: ["editor"], set: { tty: "byte", model: "N:1" }, keys: keysAt(8, "hello\n", 8),
+    tip: "Same editor, but with user-level threads the kernel sees only one thread. When the UI thread blocks in read(), autosave and spell-check are stuck too. Note when the editor finishes, then set Threads are: kernel threads and Reset." },
+  empty: { name: "13 · Empty machine", progs: [], tip: "Start any programs with Add process and type on the keyboard. Every device setting can be changed while it runs." },
 };
 
 function newWorld(cfg) {
-  return { t: 0, cfg, procs: [], threads: [], readyQ: [], cur: null, qUsed: 0, isr: 0, isrDev: null, spin: null, letter: 0, lastRun: null,
+  return { t: 0, cfg, fg: null, procs: [], threads: [], readyQ: [], cur: null, qUsed: 0, isr: 0, isrDev: null, spin: null, letter: 0, lastRun: null,
     disk: { q: [], req: null, left: 0, head: 100, dir: 1, waits: [], irq: 0, busy: 0, moved: 0 },
     nic: { q: [], req: null, left: 0, sock: {}, arrivals: [], drops: 0, irq: 0, busy: 0, rx: 0, tx: 0 },
     kbd: { inQ: [], waiters: [], script: [], typed: [], irq: 0, wakes: 0 },
@@ -308,7 +350,7 @@ function newWorld(cfg) {
 }
 function say(W, html, warn) { W.log.push({ t: W.t, html, warn }); if (W.log.length > 150) W.log.shift(); }
 const tchip = th => `<span class="chip" style="--c:${th.p.color}">${th.id}</span>`;
-function addProcess(W, key) {
+function addProcess(W, key, bg) {
   const prog = PROGRAMS[key]; const n = W.procs.filter(p => p.key === key).length;
   const name = "ABCDEFGHJKLMNPQRSTUVWXYZ"[W.letter % 24];
   const p = { pid: 100 + W.letter, key, name, color: PCOL[W.letter % PCOL.length], prog, threads: [], born: W.t, finish: null };
@@ -318,13 +360,47 @@ function addProcess(W, key) {
     if (th.ops[0].k === "cpu") th.rem = th.ops[0].n;
     p.threads.push(th); W.threads.push(th); W.readyQ.push(th);
   });
+  p.bg = !!bg;
+  if (!bg && W.fg == null && p.threads.some(th => th.ops.some(o => o.k === "kread"))) W.fg = p.pid;
   say(W, `<b>${p.name}</b> (PID ${p.pid}) started <code>${esc(prog.file)}</code> with ${p.threads.length} thread${p.threads.length > 1 ? "s" : ""}: ${p.threads.map(tchip).join(" ")} join${p.threads.length > 1 ? "" : "s"} the ready queue.`);
   return p;
 }
 function advance(th) { th.pc++; const op = th.ops[th.pc]; if (op && op.k === "cpu") th.rem = op.n; }
-function block(W, th, dev, desc) { th.state = "blocked"; th.wait = { dev, desc, since: W.t }; if (W.cur === th) W.cur = null; }
+function holdSiblings(W, th, state, desc) {
+  th.p.threads.forEach(s => {
+    if (s === th || (s.state !== "ready" && s.state !== "running")) return;
+    W.readyQ = W.readyQ.filter(x => x !== s); if (W.cur === s) W.cur = null;
+    s.state = state; s.wait = { dev: th.wait.dev, desc, since: W.t, sib: th.id };
+  });
+}
+function block(W, th, dev, desc) {
+  th.state = "blocked"; th.wait = { dev, desc, since: W.t }; if (W.cur === th) W.cur = null;
+  if (W.cfg.model === "N:1") holdSiblings(W, th, "blocked", `stuck: ${th.id} is in a blocking read() or write(), and the kernel sees the whole process as one thread`);
+}
+function stopThread(W, th) {
+  th.state = "stopped"; th.wait = { dev: "kbd", desc: "stopped by SIGTTIN: tried to read the keyboard from the background", since: W.t }; if (W.cur === th) W.cur = null;
+  holdSiblings(W, th, "stopped", `stopped with its process: ${th.id} read the keyboard from the background`);
+}
+const inSyscall = s => (s.state === "blocked" || s.state === "spin") && s.wait && !s.wait.sib;
 function spinOn(W, th, dev, desc) { th.state = "spin"; th.wait = { dev, desc, since: W.t }; W.spin = th; W.cur = null; }
-function wake(W, th) { if (W.spin === th) W.spin = null; th.state = "ready"; th.wait = null; W.readyQ.push(th); }
+function wake(W, th) {
+  if (W.spin === th) W.spin = null;
+  if (W.cfg.model === "N:1") {
+    const other = th.p.threads.find(s => s !== th && inSyscall(s));
+    if (other) { th.state = "blocked"; th.wait = { dev: other.wait.dev, desc: `stuck: ${other.id} is still in a blocking system call`, since: W.t, sib: other.id }; return; }
+  }
+  th.state = "ready"; th.wait = null; W.readyQ.push(th);
+  if (W.cfg.model === "N:1") th.p.threads.forEach(s => { if (s !== th && s.state === "blocked" && s.wait && s.wait.sib === th.id) { s.state = "ready"; s.wait = null; W.readyQ.push(s); } });
+}
+function setForeground(W, pid) {
+  const p = W.procs.find(x => x.pid === pid); if (!p || W.fg === pid) return;
+  const old = W.procs.find(x => x.pid === W.fg);
+  W.fg = pid;
+  W.kbd.waiters.filter(th => th.p.pid !== pid).forEach(th => { W.kbd.waiters = W.kbd.waiters.filter(x => x !== th); stopThread(W, th); });
+  const cont = p.threads.filter(th => th.state === "stopped");
+  cont.forEach(th => { th.state = "ready"; th.wait = null; W.readyQ.push(th); });
+  say(W, `<b>${p.name}</b> (${esc(p.prog.file)}) is now the foreground process${old ? `; <b>${old.name}</b> moves to the background` : ""}. ${cont.length ? `${cont.map(tchip).join(" ")} get${cont.length > 1 ? "" : "s"} SIGCONT and ${cont.length > 1 ? "are" : "is"} Ready again.` : ""}`);
+}
 function irq(W, dev, cost) { W.events.push({ type: "irq", dev }); if (cost) { W.isr += cost; W.isrDev = dev; } }
 function diskSay(rw, track) { return rw === "r" ? `read track ${track}` : `write track ${track}`; }
 
@@ -360,6 +436,7 @@ function execute(W, th) {
     return;
   }
   if (op.k === "kread") {
+    if (th.p.pid !== W.fg) { stopThread(W, th); say(W, `${tchip(th)} called read() on the keyboard, but <b>${th.p.name}</b> is in the background. The kernel stops the whole process with SIGTTIN; it waits until it is brought to the foreground.`, true); return; }
     const Q = W.kbd.inQ;
     if (W.cfg.tty === "line") {
       const i = Q.indexOf("\n");
@@ -367,7 +444,8 @@ function execute(W, th) {
     } else if (Q.length) {
       const ch = Q.shift();
       if (ch === "\b") th.partial = th.partial.slice(0, -1); else th.partial += ch;
-      if (ch === "\n") { th.lastLine = th.partial; th.partial = ""; say(W, `${tchip(th)} read() returns 1 byte: Enter. The command "${esc(th.lastLine.trim())}" is complete.`); advance(th); }
+      if (op.one) { th.lastLine = ch; th.partial = ""; say(W, `${tchip(th)} read() returns 1 byte: ${ch === "\n" ? "Enter" : `"${esc(ch)}"`}.`); advance(th); }
+      else if (ch === "\n") { th.lastLine = th.partial; th.partial = ""; say(W, `${tchip(th)} read() returns 1 byte: Enter. The command "${esc(th.lastLine.trim())}" is complete.`); advance(th); }
       else say(W, `${tchip(th)} read() returns 1 byte "${esc(ch)}" and must call read() again for the next key.`);
       return;
     }
@@ -401,7 +479,7 @@ function cpuTick(W) {
     }
     if (W.cur) { kind = "run"; who = W.cur; }
   }
-  const row = {}; W.threads.forEach(th => { row[th.id] = th === who ? kind : th.state; });
+  const row = {}; W.threads.forEach(th => { row[th.id] = th === who ? kind : th.state === "blocked" && th.wait && th.wait.sib ? "stuck" : th.state; });
   W.cpu[kind]++;
   if (kind === "run") { W.lastRun = who; execute(W, who); W.qUsed++; }
   return { row, kind, who };
@@ -461,7 +539,7 @@ function nicTick(W) {
         if (r.th.state === "spin" && r.th.wait && r.th.wait.dev === "net") { advance(r.th); wake(W, r.th); say(W, `The network card sent ${r.kb} KB for ${tchip(r.th)}, so it can stop polling.`); }
       } else {
         N.rx++;
-        const waiter = W.threads.find(th => (th.state === "blocked" || th.state === "spin") && th.wait && th.wait.dev === "net" && th.port === r.port && th.ops[th.pc].k === "recv");
+        const waiter = W.threads.find(th => (th.state === "blocked" || th.state === "spin") && th.wait && !th.wait.sib && th.wait.dev === "net" && th.port === r.port && th.ops[th.pc].k === "recv");
         if (waiter) { advance(waiter); wake(W, waiter); say(W, `A packet for port ${r.port} arrived. Network interrupt: ${tchip(waiter)} was waiting in recv(), so it gets the packet and is Ready.`); }
         else {
           const buf = N.sock[r.port] || (N.sock[r.port] = []);
@@ -530,7 +608,7 @@ const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).
 const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
 let W, timer = null, scenarioKey = "all";
-const cfg = { quantum: 4, tech: "dma", dpol: "FIFO", sock: 4, tty: "line" };
+const cfg = { quantum: 4, tech: "dma", dpol: "FIFO", sock: 4, tty: "line", model: "1:1" };
 
 Object.entries(SCENARIOS).forEach(([k, s]) => $("#scenario").insertAdjacentHTML("beforeend", `<option value="${k}">${s.name}</option>`));
 Object.entries(PROGRAMS).forEach(([k, p]) => $("#prog").insertAdjacentHTML("beforeend", `<option value="${k}">${esc(p.file)} · ${p.what}</option>`));
@@ -625,7 +703,7 @@ function animateEvents(evs) {
 }
 
 /* ---------- panels ---------- */
-const STATE_TXT = { ready: ["Ready", "--ready"], running: ["Running", "--run"], blocked: ["Blocked", "--blk"], spin: ["Polling", "--run"], exit: ["Done", "--exit"] };
+const STATE_TXT = { ready: ["Ready", "--ready"], running: ["Running", "--run"], blocked: ["Blocked", "--blk"], spin: ["Polling", "--run"], exit: ["Done", "--exit"], stopped: ["Stopped", "--exit"] };
 const DEVNAME = { disk: "disk", net: "network", kbd: "keyboard", disp: "display" };
 function renderProcs() {
   if (!W.procs.length) { $("#procs").innerHTML = '<p class="empty">No processes yet. Pick a program under Add process and press Start.</p>'; return; }
@@ -637,11 +715,11 @@ function renderProcs() {
       return `<div class="row ${cls}"><span class="ln">${i + 1}</span><span>${esc(txt)}</span><span>${ts.map(th => `<span class="pcm">${th.id}</span>`).join("")}</span></div>`;
     }).join("");
     const trs = p.threads.map(th => {
-      const [lab, col] = STATE_TXT[th.state];
-      const why = th.state === "blocked" ? `on the ${DEVNAME[th.wait.dev]}: ${th.wait.desc} · ${W.t - th.wait.since} ms` : th.state === "spin" ? `polling the ${DEVNAME[th.wait.dev]}: ${th.wait.desc}` : th.state === "exit" ? "" : `${th.sys} system calls so far`;
+      const [lab, col] = th.state === "blocked" && th.wait && th.wait.sib ? ["Stuck", "--blk"] : STATE_TXT[th.state];
+      const why = th.state === "stopped" ? `${th.wait.desc} · ${W.t - th.wait.since} ms` : th.state === "blocked" && th.wait.sib ? `${th.wait.desc} · ${W.t - th.wait.since} ms` : th.state === "blocked" ? `on the ${DEVNAME[th.wait.dev]}: ${th.wait.desc} · ${W.t - th.wait.since} ms` : th.state === "spin" ? `polling the ${DEVNAME[th.wait.dev]}: ${th.wait.desc}` : th.state === "exit" ? "" : `${th.sys} system calls so far`;
       return `<div class="trow">${tchip(th)}<span class="pill" style="--sc:var(${col})">${lab}</span><span class="why">${why}</span></div>`;
     }).join("");
-    return `<div class="proc" style="--pc:${p.color}"><div class="ph"><b>${p.name}</b><code>PID ${p.pid} · ${esc(p.prog.file)}</code>${p.finish != null ? `<span class="done">finished at ${p.finish} ms</span>` : ""}</div><div class="code">${rows}</div>${trs}</div>`;
+    return `<div class="proc" style="--pc:${p.color}"><div class="ph"><b>${p.name}</b><code>PID ${p.pid} · ${esc(p.prog.file)}</code>${p.finish == null && p.threads.some(th => th.ops.some(o => o.k === "kread")) ? `<span class="pill" style="--sc:var(${W.fg === p.pid ? "--kbd" : "--exit"})">${W.fg === p.pid ? "foreground" : "background"}</span>` : ""}${p.finish != null ? `<span class="done">finished at ${p.finish} ms</span>` : ""}</div><div class="code">${rows}</div>${trs}</div>`;
   }).join("");
 }
 function renderCPU() {
@@ -654,10 +732,12 @@ function renderCPU() {
   else core = `<div class="core"><b>Idle</b><br><span class="sub">every thread is blocked or done</span></div>`;
   const n = W.cpu.run + W.cpu.isr + W.cpu.spin + W.cpu.idle || 1;
   const bar = (lab, v, col) => `<div class="bar"><span>${lab}</span><span class="tr"><i style="width:${(v / n * 100).toFixed(1)}%;background:var(${col})"></i></span><span class="v">${Math.round(v / n * 100)}%</span></div>`;
-  const blocked = W.threads.filter(th => th.state === "blocked");
+  const blocked = W.threads.filter(th => th.state === "blocked" && !th.wait.sib), stuck = W.threads.filter(th => th.state === "blocked" && th.wait.sib), stopped = W.threads.filter(th => th.state === "stopped");
   $("#cpu").innerHTML = `<h3>CPU</h3>${core}
     <h3>Ready queue · round robin, ${cfg.quantum} ms slice</h3><div class="chips">${W.readyQ.length ? W.readyQ.map(tchip).join("") : '<span class="empty">empty</span>'}</div>
     <h3>Blocked, by device</h3>${["disk", "net", "kbd", "disp"].map(d => { const b = blocked.filter(th => th.wait.dev === d); return `<div class="chips"><span class="sub" style="min-width:72px">${DEVNAME[d]}</span>${b.length ? b.map(tchip).join("") : '<span class="empty">none</span>'}</div>`; }).join("")}
+    ${stuck.length ? `<div class="chips"><span class="sub" style="min-width:72px">stuck behind a sibling</span>${stuck.map(tchip).join("")}</div>` : ""}
+    ${stopped.length ? `<div class="chips"><span class="sub" style="min-width:72px">stopped (SIGTTIN)</span>${stopped.map(tchip).join("")}</div>` : ""}
     <h3>Where the CPU time went</h3><div class="bars">${bar("Useful work", W.cpu.run, "--run")}${bar("Interrupts", W.cpu.isr, "--irq")}${bar("Polling", W.cpu.spin, "--blk")}${bar("Idle", W.cpu.idle, "--line")}</div>`;
 }
 function renderDevices() {
@@ -675,7 +755,7 @@ function renderDevices() {
   const N = W.nic;
   const ports = [...new Set([...Object.keys(N.sock).map(Number), ...W.threads.flatMap(th => th.ops.filter(o => o.port && o.k === "recv").map(o => o.port))])];
   $("#ports").innerHTML = ports.length ? ports.map(pt => {
-    const buf = N.sock[pt] || [], waiting = W.threads.filter(th => th.wait && th.wait.dev === "net" && th.port === pt && th.ops[th.pc].k === "recv");
+    const buf = N.sock[pt] || [], waiting = W.threads.filter(th => th.wait && !th.wait.sib && th.wait.dev === "net" && th.port === pt && th.ops[th.pc].k === "recv");
     return `<div class="row2"><span class="lbl" style="min-width:80px">port ${pt}</span><span class="slots" title="socket buffer">${Array.from({ length: cfg.sock }, (_, i) => `<i class="${i < buf.length ? "f" : ""}"></i>`).join("")}</span><span class="sub">${buf.length} buffered · in recv():</span>${waiting.length ? waiting.map(tchip).join(" ") : '<span class="empty">no one</span>'}</div>`;
   }).join("") : '<p class="empty">No program is receiving from the network.</p>';
   const nc = q => q.kind === "rx" ? `<span class="chip" style="--c:var(--net)">in <small>port ${q.port}</small></span>` : `<span class="chip" style="--c:${q.th.p.color}">out ${q.th.id} <small>${q.kb} KB</small></span>`;
@@ -687,6 +767,15 @@ function renderDevices() {
   $("#ttyTxt").textContent = TTY[cfg.tty];
   $("#kq").innerHTML = K.inQ.length ? K.inQ.map(c => `<span class="byte">${show(c)}</span>`).join("") : '<span class="empty">empty</span>';
   $("#kw").innerHTML = K.waiters.length ? K.waiters.map(tchip).join("") : '<span class="empty">none</span>';
+  const st = W.threads.filter(th => th.state === "stopped");
+  $("#ks").innerHTML = st.length ? st.map(tchip).join("") : '<span class="empty">none</span>';
+  const alive = W.procs.filter(p => p.finish == null), fs = $("#fgSel"), want = alive.map(p => `${p.pid}:${p.name}`).join(",") + "|" + W.fg;
+  if (fs.dataset.k !== want) {
+    const keep = fs.value;
+    fs.innerHTML = alive.length ? alive.map(p => `<option value="${p.pid}">${p.name} · ${esc(p.prog.file)}${p.pid === W.fg ? " (foreground now)" : ""}</option>`).join("") : '<option value="">no processes</option>';
+    fs.value = alive.some(p => String(p.pid) === keep) ? keep : String(W.fg ?? (alive[0] || {}).pid ?? "");
+    fs.dataset.k = want;
+  }
   const nextKey = K.script.length ? Math.min(...K.script.map(k => k.t)) : null;
   $("#kstats").innerHTML = `<span class="stat">interrupts <b>${K.irq}</b></span><span class="stat">reader wake-ups <b>${K.wakes}</b></span>${nextKey != null ? `<span class="stat">next scripted key at <b>${nextKey}</b> ms</span>` : ""}`;
 
@@ -703,7 +792,7 @@ function renderTimeline() {
   const Wd = x0 + 120 * px + 20, Ht = 10 + lanes.length * (lh + gap) + 22;
   const svg = $("#timeline"); svg.setAttribute("viewBox", `0 0 ${Wd} ${Ht}`); svg.style.width = Wd + "px"; svg.style.minWidth = Wd + "px";
   const tx = (x, y, s, o = {}) => `<text x="${x}" y="${y}" font-family="${o.m ? "var(--mono)" : "var(--sans)"}" font-size="${o.s || 12}" fill="${o.f || "var(--ink)"}" text-anchor="${o.a || "start"}" font-weight="${o.w || 400}">${s}</text>`;
-  const fill = { running: "var(--run)", run: "var(--run)", ready: "var(--readyfill)", blocked: "var(--blk)", spin: "var(--run)", isr: "var(--irq)" };
+  const fill = { running: "var(--run)", run: "var(--run)", ready: "var(--readyfill)", blocked: "var(--blk)", stuck: "var(--blk)", stopped: "var(--exit)", spin: "var(--run)", isr: "var(--irq)" };
   let s = "";
   const ay = Ht - 6;
   for (let k = Math.ceil(off / 10) * 10; k <= W.t; k += 10) { const x = x0 + (k - off) * px; s += `<line x1="${x}" y1="4" x2="${x}" y2="${ay - 12}" stroke="var(--soft)"/>` + tx(x, ay, k, { a: "middle", s: 10, f: "var(--muted)", m: true }); }
@@ -720,7 +809,7 @@ function renderTimeline() {
         else {
           const thc = L.k === "cpu" && String(v).startsWith("run:") ? (W.threads.find(x => x.id === v.slice(4)) || {}).p : null;
           const f = thc ? "var(--run)" : L.k === "t" || L.k === "cpu" ? fill[v] : L.k === "disk" ? "var(--disk)" : L.k === "net" ? "var(--net)" : "var(--disp)";
-          const faded = v === "spin" || (L.k === "disk" && v === "w") || (L.k === "net" && v === "tx");
+          const faded = v === "spin" || v === "stuck" || (L.k === "disk" && v === "w") || (L.k === "net" && v === "tx");
           s += `<rect x="${x0 + i * px}" y="${y}" width="${(e - i + 1) * px}" height="${lh}" fill="${f}" ${faded ? 'fill-opacity=".5"' : ""} ${v === "ready" ? 'stroke="var(--ready)" stroke-width=".8"' : ""}/>`;
           if (thc && (e - i + 1) * px >= 22) s += tx(x0 + (i + e + 1) * px / 2, y + 12, v.slice(4), { a: "middle", s: 10, w: 700, f: "#15202B" });
         }
@@ -738,13 +827,13 @@ function render() { $("#tick").textContent = W.t; renderProcs(); renderCPU(); re
 
 /* ---------- control ---------- */
 function readCfg() { Object.assign(cfg, { quantum: +$("#quantum").value, tech: $("#tech").value, dpol: $("#dpol").value, sock: +$("#sock").value, tty: $("#tty").value }); }
-function load(key) {
+function load(key, applySet) {
   stop(); scenarioKey = key; store.set("iolab-scn", key);
   const sc = SCENARIOS[key];
-  if (sc.set) Object.entries(sc.set).forEach(([k, v]) => { const el = $("#" + k); if (el) el.value = v; });
-  readCfg();
+  if (applySet && sc.set) Object.entries(sc.set).forEach(([k, v]) => { const el = $("#" + k); if (el) el.value = v; });
+  readCfg(); cfg.model = $("#model").value;
   W = newWorld(cfg);
-  (sc.progs || []).forEach(k => addProcess(W, k));
+  (sc.progs || []).forEach(k => typeof k === "string" ? addProcess(W, k) : addProcess(W, k.k, k.bg));
   W.nic.arrivals = (sc.packets || []).map(a => ({ ...a }));
   W.kbd.script = (sc.keys || []).map(k => ({ ...k }));
   $("#tip").textContent = sc.tip;
@@ -756,9 +845,11 @@ function play() { if (timer) { stop(); return; } $("#btnPlay").textContent = "Pa
 $("#btnPlay").addEventListener("click", play);
 $("#btnStep").addEventListener("click", () => { stop(); tickOnce(); });
 $("#btnReset").addEventListener("click", () => load(scenarioKey));
-$("#scenario").addEventListener("change", e => load(e.target.value));
+$("#scenario").addEventListener("change", e => load(e.target.value, true));
 $("#speed").addEventListener("change", () => { if (timer) { stop(); play(); } });
 $("#btnAdd").addEventListener("click", () => { addProcess(W, $("#prog").value); render(); });
+$("#btnFg").addEventListener("click", () => { const v = +$("#fgSel").value; if (v) { setForeground(W, v); render(); } });
+$("#model").addEventListener("change", e => { readCfg(); say(W, `Thread model set to ${esc(e.target.options[e.target.selectedIndex].text)}. It takes effect when you press Reset.`); render(); });
 ["quantum", "tech", "dpol", "sock", "tty"].forEach(id => $("#" + id).addEventListener("change", e => {
   readCfg(); say(W, `Setting changed: ${esc(e.target.options[e.target.selectedIndex].text)}.`); render();
 }));
@@ -774,7 +865,7 @@ document.addEventListener("keydown", e => {
 });
 const saved = store.get("iolab-scn");
 if (saved && SCENARIOS[saved]) $("#scenario").value = saved;
-load($("#scenario").value);
+load($("#scenario").value, true);
 })();
 </script>
 
