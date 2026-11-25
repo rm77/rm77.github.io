@@ -1,5 +1,5 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>I/O Lab</title>
+<title>iolab</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -117,6 +117,32 @@ button.primary{background:var(--ink);color:var(--panel);border-color:var(--ink);
 #log li.warn{color:var(--irq)}
 .tip{font-size:14px;background:var(--readyfill);border-radius:8px;padding:8px 12px;margin:0}
 kbd{font-family:var(--mono);font-size:12px;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 4px}
+/* floating control bar (shared by File Lab and I/O Lab) */
+body{padding-bottom:150px}
+.fbar{position:fixed;left:50%;bottom:12px;transform:translate(-50%,140%);z-index:50;width:min(1120px,calc(100% - 24px));
+  background:color-mix(in srgb,var(--panel) 92%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  border:1px solid var(--line);border-radius:14px;box-shadow:0 8px 28px rgba(0,0,0,.18);padding:8px 10px;display:grid;gap:8px;
+  transition:transform .25s ease,opacity .25s ease;opacity:0;pointer-events:none}
+.fbar.on{transform:translate(-50%,0);opacity:1;pointer-events:auto}
+.fb-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;min-width:0}
+.fb-row button,.fb-row select,.fb-row input{font-size:14px;padding:5px 10px;min-height:36px}
+.fb-tick{font-size:13px;color:var(--muted);white-space:nowrap} .fb-tick b{font-size:18px;color:var(--ink);font-variant-numeric:tabular-nums;margin-left:4px}
+.fb-ticker{flex:1 1 220px;min-width:0;text-align:left;background:var(--bg);border:1px solid var(--soft);border-radius:8px;font-size:13px;color:var(--ink);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.fb-ticker b{color:var(--muted);font-weight:400;margin-right:6px;font-variant-numeric:tabular-nums}
+.fb-tray{border-top:1px solid var(--soft);padding-top:8px}
+.fb-l{font-size:12px;color:var(--muted)}
+.fb-grp{display:inline-flex;align-items:center;gap:6px;padding:2px 6px;border-radius:8px;background:var(--bg)}
+.fb-chip{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;border:2px solid var(--c,var(--line));border-radius:999px;padding:2px 4px 2px 10px;background:var(--panel)}
+.fb-chip button{min-height:24px;padding:0 7px;border-radius:999px;font-size:13px;line-height:1}
+.fb-jump{background:none;border:none;color:var(--ink);text-decoration:underline;text-underline-offset:3px;padding:4px 6px}
+.fb-more[aria-expanded="true"]{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+@media (max-width:600px){
+  .fbar{left:0;bottom:0;width:100%;transform:translate(0,140%);border-radius:14px 14px 0 0;padding-bottom:max(8px,env(safe-area-inset-bottom,0px))}
+  .fbar.on{transform:translate(0,0)}
+  .fb-ticker,.fb-l.opt{display:none}
+}
+@media (prefers-reduced-motion:reduce){.fbar{transition:none}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 
@@ -863,6 +889,89 @@ document.addEventListener("keydown", e => {
   if (e.target.closest && e.target.closest("input,select,textarea,button")) return;
   if (e.code === "Space") { e.preventDefault(); play(); } else if (e.key === "s" || e.key === "S") { stop(); tickOnce(); }
 });
+/* ---------- floating control bar: forwards to the controls at the top of the page ---------- */
+function makeFloatBar(cfg) {
+  const q = s => document.querySelector(s);
+  const bar = document.createElement("div");
+  bar.className = "fbar"; bar.setAttribute("role", "toolbar"); bar.setAttribute("aria-label", "Simulation controls");
+  const row = document.createElement("div"); row.className = "fb-row";
+  const tray = document.createElement("div"); tray.className = "fb-row fb-tray";
+  bar.append(row, tray);
+  const syncs = [];
+  const mkBtn = (proxy, label, o = {}) => {
+    const b = document.createElement("button"); b.type = "button"; b.textContent = label; if (o.cls) b.className = o.cls; if (o.title) b.title = o.title;
+    b.addEventListener("click", () => { const p = q(proxy); if (p && !p.disabled) p.click(); });
+    syncs.push(() => { const p = q(proxy); if (!p) { b.hidden = true; return; } if (o.mirrorText) b.textContent = p.textContent; b.disabled = p.disabled; b.hidden = o.showIf ? !o.showIf() : false; });
+    return b;
+  };
+  const mkSel = (proxy, label, o = {}) => {
+    const wrap = document.createElement("span"); wrap.className = "fb-grp";
+    if (label) { const l = document.createElement("span"); l.className = "fb-l" + (o.optLabel ? " opt" : ""); l.textContent = label; wrap.append(l); }
+    const s = document.createElement("select"); s.setAttribute("aria-label", label || proxy); if (o.maxw) s.style.maxWidth = o.maxw; wrap.append(s);
+    let key = "";
+    s.addEventListener("change", () => { const p = q(proxy); if (!p) return; p.value = s.value; p.dispatchEvent(new Event("change", { bubbles: true })); });
+    syncs.push(() => {
+      const p = q(proxy); if (!p) { wrap.hidden = true; return; }
+      const k = [...p.options].map(o2 => o2.value + "=" + o2.text).join("|");
+      if (k !== key) { s.innerHTML = p.innerHTML; key = k; }
+      if (document.activeElement !== s) s.value = p.value;
+      s.disabled = p.disabled; wrap.hidden = o.showIf ? !o.showIf() : false;
+    });
+    return wrap;
+  };
+  const scrollToHeading = txt => { const h = [...document.querySelectorAll("h2")].find(x => x.textContent.trim().startsWith(txt)); if (h) (h.closest("section,aside") || h).scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" }); };
+  /* main row */
+  row.append(mkBtn("#btnPlay", "Play", { cls: "primary", mirrorText: true }), mkBtn("#btnStep", "Step"), mkSel("#speed", ""), mkBtn("#btnReset", "Reset"));
+  const tick = document.createElement("span"); tick.className = "fb-tick"; tick.innerHTML = 'Tick<b>0</b>'; row.append(tick);
+  syncs.push(() => { const t = q("#tick"); if (t) tick.querySelector("b").textContent = t.textContent; });
+  const ticker = document.createElement("button"); ticker.type = "button"; ticker.className = "fb-ticker"; ticker.title = "Last event — click to open the full log";
+  ticker.addEventListener("click", () => scrollToHeading(cfg.logHeading || "What just happened"));
+  syncs.push(() => { const li = q("#log li"); if (!li) { ticker.textContent = "Nothing has happened yet."; return; } const t = li.querySelector(".t"), body = li.lastElementChild; ticker.innerHTML = `<b>${t ? t.textContent : ""}</b>`; ticker.append(document.createTextNode(body ? body.textContent : li.textContent)); ticker.style.color = li.classList.contains("warn") ? "var(--irq)" : ""; });
+  row.append(ticker);
+  const more = document.createElement("button"); more.type = "button"; more.className = "fb-more"; more.textContent = "More";
+  let open = false; try { open = localStorage.getItem(cfg.key + "-tray") === "1"; } catch (e) {}
+  const setOpen = v => { open = v; tray.hidden = !v; more.setAttribute("aria-expanded", v ? "true" : "false"); try { localStorage.setItem(cfg.key + "-tray", v ? "1" : "0"); } catch (e) {} };
+  more.addEventListener("click", () => setOpen(!open)); row.append(more); setOpen(open);
+  /* tray */
+  (cfg.tray || []).forEach(it => {
+    if (it.type === "btn") tray.append(mkBtn(it.proxy, it.label, it));
+    else if (it.type === "sel") tray.append(mkSel(it.proxy, it.label, it));
+    else if (it.type === "el") { tray.append(it.el); if (it.sync) syncs.push(it.sync); }
+  });
+  if (cfg.jumps && cfg.jumps.length) {
+    const j = document.createElement("span"); j.className = "fb-grp"; j.innerHTML = '<span class="fb-l">Go to</span>';
+    cfg.jumps.forEach(([label, heading]) => { const b = document.createElement("button"); b.type = "button"; b.className = "fb-jump"; b.textContent = label; b.addEventListener("click", () => scrollToHeading(heading)); j.append(b); });
+    tray.append(j);
+  }
+  document.body.append(bar);
+  const anchor = q(cfg.anchor);
+  if (anchor && "IntersectionObserver" in window) { const io = new IntersectionObserver(es => bar.classList.toggle("on", !es[0].isIntersecting)); io.observe(anchor); }
+  else bar.classList.add("on");
+  const sync = () => { try { syncs.forEach(f => f()); } catch (e) {} };
+  sync(); setInterval(sync, 200);
+  return bar;
+}
+try {
+  const kb = document.createElement("span"); kb.className = "fb-grp";
+  kb.innerHTML = '<span class="fb-l">Keyboard</span><input type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="type, then Enter" aria-label="Type on the simulated keyboard" style="font-family:var(--mono);width:170px">';
+  const ki = kb.querySelector("input");
+  ki.addEventListener("keydown", e => {
+    if (e.key === "Enter") { e.preventDefault(); W.kbd.typed.push("\n"); if (!timer) tickOnce(); }
+    else if (e.key === "Backspace" && !ki.value) { e.preventDefault(); W.kbd.typed.push("\b"); if (!timer) tickOnce(); }
+  });
+  ki.addEventListener("input", () => { const v = ki.value; ki.value = ""; [...v].forEach(ch => W.kbd.typed.push(ch)); if (!timer) tickOnce(); });
+  makeFloatBar({ key: "iolab", anchor: "header + .controls",
+    tray: [
+      { type: "el", el: kb },
+      { type: "sel", proxy: "#fgSel", label: "Foreground", maxw: "220px" },
+      { type: "btn", proxy: "#btnFg", label: "fg" },
+      { type: "sel", proxy: "#dpol", label: "Disk policy", maxw: "230px" },
+      { type: "sel", proxy: "#tech", label: "Data moved by", maxw: "230px", optLabel: true },
+      { type: "sel", proxy: "#prog", label: "Add process", maxw: "240px" },
+      { type: "btn", proxy: "#btnAdd", label: "Start" },
+    ],
+    jumps: [["Machine", "Machine view"], ["Processes", "Processes and threads"], ["Disk", "Disk"], ["Network", "Network"], ["Keyboard", "Keyboard"], ["Display", "Display"], ["Timeline", "Timeline"], ["Log", "What just happened"]] });
+} catch (e) {}
 const saved = store.get("iolab-scn");
 if (saved && SCENARIOS[saved]) $("#scenario").value = saved;
 load($("#scenario").value, true);

@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>File Lab</title>
+<title>filelab</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
@@ -123,6 +123,72 @@ textarea{width:100%;min-height:130px;font-family:var(--mono);font-size:13px}
 #realOut svg{display:block;width:100%;max-width:760px;height:auto}
 .find{margin:8px 0 0;padding-left:20px;font-size:14px}
 kbd{font-family:var(--mono);font-size:12px;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 4px}
+.gridwrap{position:relative}
+#garrows{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.blk{cursor:pointer} .blk.dim{opacity:.3}
+.selsum{margin:8px 0 0;font-size:14px;min-height:1.4em}
+table.at{width:100%;border-collapse:collapse;font-size:13.5px}
+table.at th{text-align:left;font-size:12px;color:var(--muted);font-weight:700;border-bottom:1.5px solid var(--ink);padding:5px 8px;white-space:nowrap}
+table.at td{border-bottom:1px solid var(--soft);padding:5px 8px;vertical-align:top}
+table.at tr.file{cursor:pointer} table.at tr.file:hover td{background:var(--bg)}
+table.at tr.sel td{background:var(--runfill)}
+table.at td.num{text-align:right;font-variant-numeric:tabular-nums}
+.bn{display:inline-block;font:600 12px var(--mono);padding:0 5px;border-radius:4px;border:1.5px solid var(--fc,var(--line));margin:1px 1px}
+.bn.hl{background:var(--run);color:#15202B;border-color:var(--run)}
+.bn.walk{background:var(--runfill);border-color:var(--run)}
+.arr{color:var(--muted);font-size:12px}
+.badge{display:inline-block;font-size:11px;font-weight:700;padding:0 7px;border-radius:999px;margin-left:6px;vertical-align:1px;border:1.5px solid var(--irq);color:var(--irq);white-space:nowrap}
+.fatgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(74px,1fr));gap:4px;margin-top:8px}
+.fe{border:1.5px solid var(--fc,var(--line));border-radius:6px;padding:2px 6px;font:12px var(--mono);background:var(--panel)}
+.fe b{color:var(--muted);font-weight:600} .fe.own{background:color-mix(in srgb,var(--fc) 18%,var(--panel))}
+.fe.hl{outline:3px solid var(--run)} .fe.walk{outline:2px dashed var(--run)} .fe.diff{box-shadow:inset 0 -3px 0 var(--irq)}
+.ptree{display:grid;gap:6px;font-size:13px}
+.pnode{border:1.5px solid var(--fc);border-radius:8px;padding:6px 8px;background:var(--panel)}
+.pnode.pb{border-style:dashed}
+.pnode .t{font-weight:700;margin-bottom:4px}
+.pkids{display:grid;gap:6px;margin-left:18px;padding-left:10px;border-left:2px solid var(--line)}
+.slots{display:flex;flex-wrap:wrap;gap:3px;align-items:center}
+.slot{min-width:34px;text-align:center;font:600 12px var(--mono);border:1.5px solid var(--line);border-radius:4px;padding:1px 4px;background:var(--bg)}
+.slot.used{border-color:var(--fc);background:color-mix(in srgb,var(--fc) 18%,var(--panel))}
+.slot.hl{background:var(--run);border-color:var(--run);color:#15202B}
+.bits{display:grid;grid-template-columns:repeat(16,minmax(0,1fr));gap:2px;font:600 11px var(--mono)}
+.bit{text-align:center;border-radius:3px;padding:2px 0;background:var(--bg);border:1px solid var(--soft)}
+.bit.one{background:var(--ink);color:var(--panel)} .bit.res{opacity:.45} .bit.diff{box-shadow:0 0 0 2px var(--irq)} .bit.hl{box-shadow:0 0 0 2px var(--run)}
+.flist{display:flex;flex-wrap:wrap;gap:3px;align-items:center;font:600 12px var(--mono)}
+.flist span.b{border:1.5px solid var(--bmpc);border-radius:4px;padding:0 5px}
+.cmpgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.cmpc{background:var(--bg);border-radius:10px;padding:10px;display:grid;gap:8px;align-content:start}
+.cmpc h3{margin:0;font-size:15px}
+.mini{display:grid;grid-template-columns:repeat(16,minmax(0,1fr));gap:2px}
+.mini i{aspect-ratio:1;border-radius:2px;background:var(--panel);border:1px solid var(--soft)}
+.mini i.o{background:var(--fc);border-color:var(--fc)} .mini i.x{background:var(--line)} .mini i.m{background:repeating-linear-gradient(135deg,var(--fc) 0 3px,var(--panel) 3px 6px);border-color:var(--fc)} .mini i.r{background:var(--metafill)}
+.cmpc .kv{font-size:13px}
+/* floating control bar (shared by File Lab and I/O Lab) */
+body{padding-bottom:150px}
+.fbar{position:fixed;left:50%;bottom:12px;transform:translate(-50%,140%);z-index:50;width:min(1120px,calc(100% - 24px));
+  background:color-mix(in srgb,var(--panel) 92%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  border:1px solid var(--line);border-radius:14px;box-shadow:0 8px 28px rgba(0,0,0,.18);padding:8px 10px;display:grid;gap:8px;
+  transition:transform .25s ease,opacity .25s ease;opacity:0;pointer-events:none}
+.fbar.on{transform:translate(-50%,0);opacity:1;pointer-events:auto}
+.fb-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;min-width:0}
+.fb-row button,.fb-row select,.fb-row input{font-size:14px;padding:5px 10px;min-height:36px}
+.fb-tick{font-size:13px;color:var(--muted);white-space:nowrap} .fb-tick b{font-size:18px;color:var(--ink);font-variant-numeric:tabular-nums;margin-left:4px}
+.fb-ticker{flex:1 1 220px;min-width:0;text-align:left;background:var(--bg);border:1px solid var(--soft);border-radius:8px;font-size:13px;color:var(--ink);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.fb-ticker b{color:var(--muted);font-weight:400;margin-right:6px;font-variant-numeric:tabular-nums}
+.fb-tray{border-top:1px solid var(--soft);padding-top:8px}
+.fb-l{font-size:12px;color:var(--muted)}
+.fb-grp{display:inline-flex;align-items:center;gap:6px;padding:2px 6px;border-radius:8px;background:var(--bg)}
+.fb-chip{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;border:2px solid var(--c,var(--line));border-radius:999px;padding:2px 4px 2px 10px;background:var(--panel)}
+.fb-chip button{min-height:24px;padding:0 7px;border-radius:999px;font-size:13px;line-height:1}
+.fb-jump{background:none;border:none;color:var(--ink);text-decoration:underline;text-underline-offset:3px;padding:4px 6px}
+.fb-more[aria-expanded="true"]{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+@media (max-width:600px){
+  .fbar{left:0;bottom:0;width:100%;transform:translate(0,140%);border-radius:14px 14px 0 0;padding-bottom:max(8px,env(safe-area-inset-bottom,0px))}
+  .fbar.on{transform:translate(0,0)}
+  .fb-ticker,.fb-l.opt{display:none}
+}
+@media (prefers-reduced-motion:reduce){.fbar{transition:none}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style></head><body>
 <main>
@@ -198,7 +264,8 @@ kbd{font-family:var(--mono);font-size:12px;border:1px solid var(--line);border-b
         <span class="lbl">Scheduling</span>
         <select id="dpol" aria-label="Disk scheduling policy"><option value="FIFO" selected>FIFO</option><option value="SSTF">SSTF</option><option value="SCAN">SCAN</option><option value="CSCAN">C-SCAN</option><option value="Deadline">Deadline</option></select>
       </div></div>
-    <div class="dgrid" id="dgrid"></div>
+    <div class="gridwrap"><div class="dgrid" id="dgrid"></div><svg id="garrows" aria-hidden="true"></svg></div>
+    <p class="selsum" id="selsum"></p>
     <div class="legend">
       <span><i style="background:var(--metafill);border-color:var(--sbc)"></i>Superblock, free-space map, FAT, journal, inode table</span>
       <span><i style="background:color-mix(in srgb,#3D85C6 22%,var(--panel));border-color:#3D85C6"></i>File data (one colour per file)</span>
@@ -212,6 +279,24 @@ kbd{font-family:var(--mono);font-size:12px;border:1px solid var(--line);border-b
     <div style="margin-top:10px" class="arm" id="arm"></div>
     <div style="margin-top:8px"><span class="lbl">Disk queue</span><div class="chips" id="dq"></div></div>
     <div class="stats" id="dstats" style="margin-top:6px"></div>
+  </section>
+
+  <div class="fsrow">
+    <section class="card">
+      <div class="chead"><h2 id="atTitle">File allocation table</h2><span class="sub">Click a file to trace it on the disk. Highlighted entries are the ones the kernel is using right now.</span></div>
+      <div class="scroll" id="atab"></div>
+      <div id="atDetail" style="margin-top:10px"></div>
+    </section>
+    <aside class="card">
+      <div class="chead"><h2 id="fsTitle">Free-space map</h2></div>
+      <div id="fsmap"></div>
+    </aside>
+  </div>
+
+  <section class="card">
+    <div class="chead"><h2>Compare methods</h2>
+      <div class="row2"><span class="lbl">File</span><select id="cmpFile" aria-label="File to compare"></select><span class="sub">the same file in the scenario's starting layout, laid out by each method</span></div></div>
+    <div id="cmp"></div>
   </section>
 
   <div class="fsrow">
@@ -752,7 +837,7 @@ function plan(W, th, op) {
     const bm = bmap(m, f.ino, op.blk);
     bm.meta.forEach(x => reads.push({ ...x, meta: true }));
     reads.push({ b: bm.phys, why: `data block ${op.blk} of ${f.path}` });
-    return { reads, hits, effect: () => { th.val = m.vals[bm.phys] || 0; return { msg: `read block ${op.blk} of ${esc(f.path)} (disk block ${bm.phys})${op.blk === 0 && f.path === "/shared/counter" ? `: value ${th.val}` : ""}.` }; } };
+    return { reads, hits, focus: { ino: f.ino, i: op.blk }, effect: () => { th.val = m.vals[bm.phys] || 0; return { msg: `read block ${op.blk} of ${esc(f.path)} (disk block ${bm.phys})${op.blk === 0 && f.path === "/shared/counter" ? `: value ${th.val}` : ""}.` }; } };
   }
   if (op.k === "write") {
     const f = fdOf(); if (!f) return { reads, hits, err: `EBADF: fd ${op.fd} is not open` };
@@ -761,7 +846,7 @@ function plan(W, th, op) {
     const i = op.append ? n.size : op.blk;
     if (i < n.size) {
       const bm = bmap(m, f.ino, i); bm.meta.forEach(x => reads.push({ ...x, meta: true }));
-      return { reads, hits, effect: () => {
+      return { reads, hits, focus: { ino: f.ino, i }, effect: () => {
         const phys = fblocks(m, f.ino)[i]; if (phys === undefined) return { err: "EIO" };
         const v = op.inc ? th.val + 1 : (m.vals[phys] || 0); m.vals[phys] = v; W.pc.put(phys);
         commitUnits(W, ["data:" + phys], th);
@@ -774,7 +859,7 @@ function plan(W, th, op) {
     if (m.alloc === "inode" && n.size >= DIRECT && n.size < DIRECT + PPB && n.ind) reads.push({ b: n.ind.b, why: "the single indirect block", meta: true });
     if (m.alloc === "inode" && n.size >= DIRECT + PPB && n.dind) { reads.push({ b: n.dind.b, why: "the double indirect block", meta: true }); const k = Math.floor((n.size - DIRECT - PPB) / PPB); if (n.dind.kids[k]) reads.push({ b: n.dind.kids[k].b, why: "an indirect block below the double indirect block", meta: true }); }
     if (m.alloc === "extents" && n.eblk >= 0) reads.push({ b: n.eblk, why: "the extent block", meta: true });
-    return { reads, hits, effect: () => {
+    return { reads, hits, focus: { ino: f.ino, i, append: true }, effect: () => {
       const res = fappend(m, f.ino); if (res.err) return res;
       res.units.add("data:" + res.phys); W.pc.put(res.phys); commitUnits(W, res.units, th);
       return { msg: `write appends block ${m.inodes[f.ino].size - 1} of ${esc(f.path)} at disk block ${res.phys} (page cache, dirty).` };
@@ -834,6 +919,7 @@ function execute(W, th) {
   }
   if (!th.plan) {
     th.sys++; th.plan = plan(W, th, op);
+    if (th.plan.focus) W.focus = { ...th.plan.focus, t: W.t, th };
     if (th.plan.hits.length) say(W, `${tchip(th)} ${esc(op.k)}(): found in memory: ${th.plan.hits.map(esc).join("; ")}.`);
     if (th.plan.err && !th.plan.reads.length) { W.st.errors++; say(W, `${tchip(th)} ${esc(op.k)}() fails: ${esc(th.plan.err)}`, true); th.plan = null; advance(th); return; }
   }
@@ -975,7 +1061,7 @@ const $ = s => document.querySelector(s);
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
-let W, timer = null, scenarioKey = "tour";
+let W, timer = null, scenarioKey = "tour", lastR = {};
 const SETTINGS = ["alloc", "free", "nblocks", "ninodes", "caches", "pcache", "journal", "lock", "quantum", "dpol"];
 
 Object.entries(SCENARIOS).forEach(([k, s]) => $("#scenario").insertAdjacentHTML("beforeend", `<option value="${k}">${s.name}</option>`));
@@ -1097,16 +1183,17 @@ function roleMap(m) {
   m.inodes.forEach((n, ino) => {
     if (!n) return;
     const nm = shortName(m, ino), col = fcol(ino);
-    fblocks(m, ino).forEach((b, i) => { R[b] = R[b] ? { ...R[b], bad: true } : { cls: "data", fc: col, w: `${nm} ${i}`, tip: `Block ${i} of ${pathsOf(m, ino)[0] || "inode " + ino} (inode ${ino})` }; });
-    if (n.type === "d" && n.dblk >= 0) R[n.dblk] = R[n.dblk] ? { ...R[n.dblk], bad: true } : { cls: "dirb", fc: col, w: `dir ${nm}`, tip: `Directory block of ${pathsOf(m, ino)[0] || "inode " + ino}: names and inode numbers` };
+    fblocks(m, ino).forEach((b, i) => { R[b] = R[b] ? { ...R[b], bad: true } : { ino, cls: "data", fc: col, w: `${nm} ${i}`, tip: `Block ${i} of ${pathsOf(m, ino)[0] || "inode " + ino} (inode ${ino})` }; });
+    if (n.type === "d" && n.dblk >= 0) R[n.dblk] = R[n.dblk] ? { ...R[n.dblk], bad: true } : { ino, cls: "dirb", fc: col, w: `dir ${nm}`, tip: `Directory block of ${pathsOf(m, ino)[0] || "inode " + ino}: names and inode numbers` };
     const mb = []; if (n.ind) mb.push([n.ind.b, "single ind."]); if (n.dind) { mb.push([n.dind.b, "double ind."]); n.dind.kids.forEach(k => mb.push([k.b, "ind. (2nd)"])); } if (n.eblk >= 0) mb.push([n.eblk, "extents"]);
-    mb.forEach(([b, w]) => { R[b] = R[b] ? { ...R[b], bad: true } : { cls: "meta", fc: col, w: `${nm} ${w}`, tip: `${w} block of ${pathsOf(m, ino)[0] || "inode " + ino}` }; });
-    if (m.alloc === "contiguous" && n.type === "f") for (let i = n.size; i < n.cap; i++) { const b = n.start + i; if (!R[b]) R[b] = { cls: "pre", fc: col, w: `${nm} (resv)`, tip: `Reserved for ${pathsOf(m, ino)[0]} but not written yet` }; }
+    mb.forEach(([b, w]) => { R[b] = R[b] ? { ...R[b], bad: true } : { ino, cls: "meta", fc: col, w: `${nm} ${w}`, tip: `${w} block of ${pathsOf(m, ino)[0] || "inode " + ino}` }; });
+    if (m.alloc === "contiguous" && n.type === "f") for (let i = n.size; i < n.cap; i++) { const b = n.start + i; if (!R[b]) R[b] = { ino, cls: "pre", fc: col, w: `${nm} (resv)`, tip: `Reserved for ${pathsOf(m, ino)[0]} but not written yet` }; }
   });
   return R;
 }
 function renderDisk() {
-  const m = view(), R = roleMap(m), cols = m.nb <= 32 ? 8 : 16;
+  const m = view(), R = roleMap(m), cols = m.nb <= 32 ? 8 : 16; lastR = R;
+  const sIno = selIno(m), selSet = sIno != null ? new Set(owned(m, sIno)) : null;
   $("#dgrid").style.gridTemplateColumns = `repeat(${cols},minmax(0,1fr))`;
   const dirtyB = new Set([...W.dirty.keys()].map(u => unitBlock(W.mem, u)));
   const act = W.dsk.req ? W.dsk.req.b : -1, fsckBad = new Set((W.crashed ? [] : fsck(m)).filter(x => x.b !== undefined).map(x => x.b));
@@ -1118,9 +1205,12 @@ function renderDisk() {
     const mk = `${W.pc.has(b) && !W.crashed ? '<i class="c"></i>' : ""}${dirtyB.has(b) && !W.crashed ? '<i class="d"></i>' : ""}`;
     const label = free ? (usedNoOwner ? "used?" : "free") : r.w;
     const tip = free ? (usedNoOwner ? `Block ${b}: marked in use, but no file owns it` : `Block ${b}: free (${m.bitmap[b] ? "used" : "0"} in the bit table)`) : `Block ${b}: ${r.tip}`;
-    h += `<div class="blk ${cls} ${r && r.bad || fsckBad.has(b) ? "bad" : ""} ${b === act ? "act" : ""}" style="${style}" title="${esc(tip)}"><span class="n">${b}</span><span class="mk">${mk}</span><span class="w" style="${free ? "color:var(--muted);font-weight:400" : ""}">${esc(label)}</span></div>`;
+    const dim = selSet && !selSet.has(b) && b >= m.data0 && !(m.alloc === "fat" && b === FATB);
+    h += `<div data-b="${b}" class="blk ${cls} ${dim ? "dim" : ""} ${r && r.bad || fsckBad.has(b) ? "bad" : ""} ${b === act ? "act" : ""}" style="${style}" title="${esc(tip)}"><span class="n">${b}</span><span class="mk">${mk}</span><span class="w" style="${free ? "color:var(--muted);font-weight:400" : ""}">${esc(label)}</span></div>`;
   }
   $("#dgrid").innerHTML = h;
+  $("#selsum").innerHTML = selSummary(m, sIno);
+  drawArrows(m, sIno);
   const D = W.dsk, pos = tr => (tr / 199 * 100).toFixed(2) + "%";
   $("#arm").innerHTML = `<span class="ax" style="left:4px">block 0</span><span class="ax" style="right:4px">block ${m.nb - 1}</span>` +
     D.q.map(q => `<span class="rq ${q.rw === "w" ? "w" : ""}" style="left:${pos(blockTrack(W, q.b))};--c:${q.th ? q.th.p.color : "var(--irq)"}" title="${esc(q.why)}"></span>`).join("") +
@@ -1152,7 +1242,7 @@ function renderFS() {
     ents.forEach(([nm, c], i) => {
       const last = i === ents.length - 1, n = m.inodes[c];
       const tag = !n ? ' <span style="color:var(--irq)">→ free inode!</span>' : n.type === "l" ? ` → ${esc(n.target)}` : n.type === "d" ? "/" : "";
-      lines.push(`${pre}${last ? "└─ " : "├─ "}<span style="color:${fcol(c)};font-weight:700">${esc(nm)}</span>${tag} <span class="ino">[inode ${c}]</span>`);
+      lines.push(`${pre}${last ? "└─ " : "├─ "}<span data-ino="${c}" style="color:${fcol(c)};font-weight:700;cursor:pointer">${esc(nm)}</span>${tag} <span class="ino">[inode ${c}]</span>`);
       if (n && n.type === "d" && depth < 8) rec(c, pre + (last ? "   " : "│  "), depth + 1);
     });
   };
@@ -1180,6 +1270,180 @@ function renderFS() {
   const iss = W.crashed ? null : fsck(m); W.liveFsck = iss;
   $("#fsckOut").innerHTML = iss == null ? '<p class="empty">The system has crashed. Press Recover to check the disk.</p>' : iss.length ? `<ul class="issues">${iss.map(x => `<li>${esc(x.text)}</li>`).join("")}</ul>` : '<p class="ok">No problems: the file system is consistent.</p>';
 }
+
+/* ---------- selection, allocation tables, free space, compare ---------- */
+let sel = null; /* { path, ino } */
+const SEL_DEFAULT = { tour: NOTES, links: NOTES, path: NOTES, random: "/data/big.db", deep: "/data/big.db", cache: "/data/big.db", crash: "/home/student/draft.txt", counter: "/shared/counter" };
+function selIno(m) {
+  if (!sel) return null;
+  if (sel.path) { const r = walk(m, sel.path, false); if (!r.err && m.inodes[r.ino] && m.inodes[r.ino].type === "f") return r.ino; }
+  if (sel.ino != null && m.inodes[sel.ino] && m.inodes[sel.ino].type === "f") return sel.ino;
+  return null;
+}
+function setSel(m, ino) { if (ino == null || !m.inodes[ino] || m.inodes[ino].type !== "f") { sel = null; return; } const p = pathsOf(m, ino); sel = { path: p[0] || null, ino }; }
+function focusNow() {
+  const f = W.focus; if (!f || W.crashed) return null;
+  if (f.th && f.th.plan && f.th.state !== "exit") return f;
+  return W.t - f.t <= 4 ? f : null;
+}
+/* blocks the kernel walks to reach file block i, and the target block */
+function touched(m, ino, i) {
+  const n = m.inodes[ino]; if (!n) return { walk: [], hit: [] };
+  const bl = fblocks(m, ino);
+  if (i >= bl.length) return { walk: [], hit: [] };
+  if (m.alloc === "chained" || m.alloc === "fat") return { walk: bl.slice(0, i), hit: [bl[i]] };
+  const bm = bmap(m, ino, i);
+  return { walk: bm.meta.map(x => x.b).filter(b => b !== FATB), hit: [bm.phys] };
+}
+const runsOf = bl => { let r = 0; bl.forEach((b, i) => { if (i === 0 || b !== bl[i - 1] + 1) r++; }); return r; };
+function rowSig(m, ino) {
+  const n = m.inodes[ino]; if (!n) return "";
+  return JSON.stringify([n.size, n.start, n.cap, fblocks(m, ino), fmeta(m, ino), n.ext]);
+}
+function fileList(m) { const out = []; m.inodes.forEach((n, ino) => { if (n && n.type === "f") out.push(ino); }); return out.sort((a, b) => (pathsOf(m, a)[0] || "~").localeCompare(pathsOf(m, b)[0] || "~")); }
+function renderAlloc() {
+  const m = view(), other = m === W.disk ? W.mem : W.disk, sIno = selIno(m), f = focusNow();
+  const tch = f && m.inodes[f.ino] ? touched(m, f.ino, f.i) : { walk: [], hit: [] };
+  const H = new Set(tch.hit), WK = new Set(tch.walk);
+  const bn = (b, ino) => `<span class="bn ${H.has(b) ? "hl" : WK.has(b) ? "walk" : ""}" style="--fc:${fcol(ino)}">${b}</span>`;
+  const diffBadge = ino => {
+    if (W.crashed) return "";
+    const a = rowSig(m, ino), b = other.inodes[ino] && other.inodes[ino].type === "f" ? rowSig(other, ino) : null;
+    if (a === b) return "";
+    return m === W.mem ? `<span class="badge" title="The disk still has the older entry">not yet on disk</span>` : `<span class="badge" title="Memory has a newer entry">older than memory</span>`;
+  };
+  const files = fileList(m);
+  const nm = ino => { const p = pathsOf(m, ino); return p.length ? esc(p[0]) : `<span style="color:var(--irq)">inode ${ino} (no name)</span>`; };
+  const tr = (ino, cells) => `<tr class="file ${ino === sIno ? "sel" : ""}" data-ino="${ino}">${cells}</tr>`;
+  const name = ino => `<td><span class="sw" style="--fc:${fcol(ino)}"></span>${nm(ino)}${diffBadge(ino)}</td>`;
+  let head, rows;
+  $("#atTitle").textContent = `File allocation table: ${ALLOC_NAME[m.alloc]}`;
+  if (m.alloc === "contiguous") {
+    head = "<th>File name</th><th>Start block</th><th>Length</th><th>Reserved</th><th>Blocks</th>";
+    rows = files.map(ino => { const n = m.inodes[ino]; return tr(ino, `${name(ino)}<td class="num">${n.start}</td><td class="num">${n.size}</td><td class="num">${n.cap}</td><td>${fblocks(m, ino).map(b => bn(b, ino)).join("") || "—"}</td>`); });
+  } else if (m.alloc === "chained") {
+    head = "<th>File name</th><th>Start block</th><th>Length</th><th>Chain (each block holds the next block's number)</th>";
+    rows = files.map(ino => { const n = m.inodes[ino], bl = fblocks(m, ino); return tr(ino, `${name(ino)}<td class="num">${n.size ? n.first : "—"}</td><td class="num">${n.size}</td><td>${bl.map(b => bn(b, ino)).join('<span class="arr">→</span>') || "—"}</td>`); });
+  } else if (m.alloc === "fat") {
+    head = "<th>File name</th><th>Start block</th><th>Length</th><th>Chain read from the FAT</th>";
+    rows = files.map(ino => { const n = m.inodes[ino], bl = fblocks(m, ino); return tr(ino, `${name(ino)}<td class="num">${n.size ? n.first : "—"}</td><td class="num">${n.size}</td><td>${bl.map(b => bn(b, ino)).join('<span class="arr">→</span>') || "—"}</td>`); });
+  } else if (m.alloc === "inode") {
+    head = "<th>File name</th><th>Index (inode)</th><th>Length</th><th>Direct pointers</th><th>Single indirect</th><th>Double indirect</th>";
+    rows = files.map(ino => { const n = m.inodes[ino];
+      return tr(ino, `${name(ino)}<td class="num">${ino}</td><td class="num">${n.size}</td><td>${n.direct.map(b => bn(b, ino)).join("") || "—"}</td><td>${n.ind ? `#${n.ind.b}` : "—"}</td><td>${n.dind ? `#${n.dind.b}` : "—"}</td>`); });
+  } else {
+    head = "<th>File name</th><th>Length</th><th>Extents (start, length)</th><th>Extent block</th>";
+    rows = files.map(ino => { const n = m.inodes[ino];
+      return tr(ino, `${name(ino)}<td class="num">${n.size}</td><td>${n.ext.map(([s0, l]) => { const inExt = [...H].some(b => b >= s0 && b < s0 + l); return `<span class="bn ${inExt ? "hl" : ""}" style="--fc:${fcol(ino)}">(${s0}, ${l})</span>`; }).join(" ") || "—"}</td><td>${n.eblk >= 0 ? `#${n.eblk}` : "—"}</td>`); });
+  }
+  $("#atab").innerHTML = `<table class="at"><thead><tr>${head}</tr></thead><tbody>${rows.join("") || `<tr><td colspan="6" class="empty">No files.</td></tr>`}</tbody></table><p class="sub" style="margin:6px 0 0">Directories are not listed: each one uses a single directory block.${f && m.inodes[f.ino] ? ` Now: ${esc(f.th.id)} is looking up block ${f.i} of ${esc(pathsOf(m, f.ino)[0] || "inode " + f.ino)}.` : ""}</p>`;
+  /* detail under the table */
+  let det = "";
+  if (m.alloc === "fat") {
+    const own = {}; m.inodes.forEach((n, ino) => { if (n && n.type === "f") fblocks(m, ino).forEach(b => own[b] = ino); });
+    let cells = "";
+    for (let b = m.data0; b < m.nb; b++) {
+      const v = m.fat[b], ino = own[b], d = !W.crashed && other.fat[b] !== v;
+      cells += `<div class="fe ${ino != null ? "own" : ""} ${H.has(b) ? "hl" : WK.has(b) ? "walk" : ""} ${d ? "diff" : ""}" style="--fc:${ino != null ? fcol(ino) : "var(--line)"}" title="FAT entry ${b}${d ? (m === W.mem ? " (not yet on disk)" : " (older than memory)") : ""}"><b>${b}:</b> ${v === -2 ? "EOF" : v >= 0 ? v : "free"}</div>`;
+    }
+    det = `<div class="lbl">The FAT itself (block ${FATB}): one entry per data block, holding the next block of the file</div><div class="fatgrid">${cells}</div>`;
+  } else if (m.alloc === "inode" && sIno != null) {
+    const n = m.inodes[sIno], c = fcol(sIno);
+    const slot = (b, i) => `<span class="slot ${b != null ? "used" : ""} ${H.has(b) ? "hl" : ""}" style="--fc:${c}" title="file block ${i}">${b != null ? b : "—"}</span>`;
+    const dslots = Array.from({ length: DIRECT }, (_, i) => slot(n.direct[i], i)).join("");
+    const ind = n.ind ? `<div class="pnode pb ${WK.has(n.ind.b) ? "" : ""}" style="--fc:${c}"><div class="t">Single indirect block #${n.ind.b}${WK.has(n.ind.b) ? " · being read" : ""}</div><div class="slots">${Array.from({ length: PPB }, (_, i) => slot(n.ind.ptr[i], DIRECT + i)).join("")}</div></div>` : `<div class="pnode pb" style="--fc:var(--line)"><div class="t">Single indirect: not allocated yet</div></div>`;
+    const dind = n.dind ? `<div class="pnode pb" style="--fc:${c}"><div class="t">Double indirect block #${n.dind.b}${WK.has(n.dind.b) ? " · being read" : ""}</div><div class="pkids">${n.dind.kids.map((k, ki) => `<div class="pnode pb" style="--fc:${c}"><div class="t">Indirect block #${k.b}${WK.has(k.b) ? " · being read" : ""}</div><div class="slots">${Array.from({ length: PPB }, (_, i) => slot(k.ptr[i], DIRECT + PPB + ki * PPB + i)).join("")}</div></div>`).join("")}</div></div>` : `<div class="pnode pb" style="--fc:var(--line)"><div class="t">Double indirect: not allocated yet</div></div>`;
+    det = `<div class="lbl">Index of ${esc(pathsOf(m, sIno)[0] || "inode " + sIno)}: inode ${sIno}, stored in inode-table block ${ITAB + Math.floor(sIno / IPB)}</div><div class="ptree" style="margin-top:6px"><div class="pnode" style="--fc:${c}"><div class="t">Direct pointers (file blocks 0–${DIRECT - 1})</div><div class="slots">${dslots}</div></div>${ind}${dind}</div>`;
+  } else if (m.alloc === "inode") det = '<p class="empty">Click a file to see its index: the direct pointers and the indirect blocks.</p>';
+  $("#atDetail").innerHTML = det;
+}
+function renderFree() {
+  const m = view(), other = m === W.disk ? W.mem : W.disk, runs = freeRuns(m);
+  $("#fsTitle").textContent = m.free === "list" ? "Free-space map: free-block list" : "Free-space map: bit table";
+  let h = "";
+  if (m.free === "bitmap") {
+    let bits = "";
+    for (let b = 0; b < m.nb; b++) { const d = !W.crashed && other.bitmap[b] !== m.bitmap[b]; bits += `<span class="bit ${m.bitmap[b] ? "one" : ""} ${b < m.data0 ? "res" : ""} ${d ? "diff" : ""}" title="block ${b}: ${m.bitmap[b] ? "in use" : "free"}${d ? (m === W.mem ? " (not yet on disk)" : " (older than memory)") : ""}">${m.bitmap[b] ? 1 : 0}</span>`; }
+    h += `<div class="lbl">Block ${BMP}: one bit per block (1 = in use)</div><div class="bits" style="margin-top:6px">${bits}</div>`;
+  } else {
+    const fl = m.freeList;
+    h += `<div class="lbl">Block ${BMP} holds the head; each free block holds the number of the next</div><div class="flist" style="margin-top:6px"><span class="sub">head →</span>${fl.slice(0, 24).map(b => `<span class="b">${b}</span>`).join('<span class="arr">→</span>')}${fl.length > 24 ? ` <span class="sub">… ${fl.length - 24} more</span>` : ""}${fl.length ? "" : '<span class="empty">empty</span>'}</div>`;
+  }
+  const fs = fragStats(m);
+  h += `<div class="kv" style="margin-top:10px"><span>Free data blocks</span><span>${fs.free}</span><span>Free runs</span><span>${fs.runs}</span><span>Largest free run</span><span>${fs.big}</span></div>`;
+  h += `<p class="sub" style="margin:8px 0 0">Free runs (start, length): ${runs.map(r => `(${r[0]}, ${r[1]})`).join(" ") || "none"}</p>`;
+  if (!W.crashed && m.free === "bitmap") h += `<p class="sub" style="margin:6px 0 0">${m === W.mem ? "A red ring marks a bit that is newer in memory than on disk." : "A red ring marks a bit that memory has already changed."}</p>`;
+  $("#fsmap").innerHTML = h;
+}
+function selSummary(m, ino) {
+  if (ino == null) return 'Click a file in the allocation table, the directory tree or the disk to trace its blocks.';
+  const n = m.inodes[ino], bl = fblocks(m, ino), k = bl.length - 1, nm = esc(pathsOf(m, ino)[0] || "inode " + ino);
+  if (!bl.length) return `<b>${nm}</b>: no data blocks yet${m.alloc === "contiguous" ? `; ${n.cap} reserved from block ${n.start}` : ""}.`;
+  const meta = fmeta(m, ino).length;
+  const cost = m.alloc === "contiguous" ? "no pointer reads (start + i)" : m.alloc === "chained" ? `${k} pointer reads (blocks 0–${k - 1} first)` : m.alloc === "fat" ? "1 read of the FAT block, which then stays in the cache" : `${bmap(m, ino, k).meta.length} pointer-block read${bmap(m, ino, k).meta.length === 1 ? "" : "s"}`;
+  return `<b>${nm}</b>: ${bl.length} block${bl.length === 1 ? "" : "s"} in ${runsOf(bl)} run${runsOf(bl) === 1 ? "" : "s"}${meta ? `, plus ${meta} pointer or extent block${meta === 1 ? "" : "s"}` : ""}. Reading its last block (block ${k}) needs ${cost}.`;
+}
+function drawArrows(m, ino) {
+  const svg = $("#garrows"), wrap = svg.parentElement; svg.innerHTML = "";
+  if (ino == null) return;
+  const n = m.inodes[ino]; if (!n) return;
+  const base = wrap.getBoundingClientRect();
+  svg.setAttribute("viewBox", `0 0 ${base.width} ${base.height}`);
+  const cells = $("#dgrid").children;
+  const ctr = b => { const c = cells[b]; if (!c) return null; const r = c.getBoundingClientRect(); return [r.left - base.left + r.width / 2, r.top - base.top + r.height / 2]; };
+  const col = fcol(ino);
+  let s = `<defs><marker id="gah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="${col}"/></marker></defs>`;
+  const arrow = (a, b, dash) => {
+    const p = ctr(a), q = ctr(b); if (!p || !q || a === b) return;
+    const mx = (p[0] + q[0]) / 2, my = (p[1] + q[1]) / 2, dx = q[0] - p[0], dy = q[1] - p[1], L = Math.hypot(dx, dy) || 1;
+    const bend = Math.min(40, L * .25), cx = mx - dy / L * bend, cy = my + dx / L * bend;
+    const sh = 14 / L, ex = q[0] - dx * sh, ey = q[1] - dy * sh;
+    s += `<path d="M ${p[0]} ${p[1]} Q ${cx} ${cy} ${ex} ${ey}" fill="none" stroke="${col}" stroke-width="2.5" ${dash ? 'stroke-dasharray="5 4"' : ""} marker-end="url(#gah)" opacity=".9"/>`;
+  };
+  const bl = fblocks(m, ino), itb = ITAB + Math.floor(ino / IPB);
+  if (m.alloc === "contiguous") {
+    if (n.cap) { const a = ctr(n.start), z = ctr(n.start + n.cap - 1), c0 = cells[n.start]; if (a && z && c0) { const r = c0.getBoundingClientRect(); s += `<path d="M ${a[0]} ${a[1] + r.height / 2 + 4} L ${z[0]} ${z[1] + r.height / 2 + 4}" stroke="${col}" stroke-width="4" stroke-linecap="round"/>`; } }
+    arrow(itb, n.start, true);
+  } else if (m.alloc === "chained" || m.alloc === "fat") {
+    if (bl.length) arrow(m.alloc === "fat" ? FATB : itb, bl[0], true);
+    for (let i = 1; i < bl.length; i++) arrow(bl[i - 1], bl[i]);
+  } else if (m.alloc === "inode") {
+    n.direct.forEach(b => arrow(itb, b));
+    if (n.ind) { arrow(itb, n.ind.b, true); n.ind.ptr.forEach(b => arrow(n.ind.b, b)); }
+    if (n.dind) { arrow(itb, n.dind.b, true); n.dind.kids.forEach(k => { arrow(n.dind.b, k.b, true); k.ptr.forEach(b => arrow(k.b, b)); }); }
+  } else {
+    const src = n.eblk >= 0 ? n.eblk : itb; if (n.eblk >= 0) arrow(itb, n.eblk, true);
+    n.ext.forEach(([s0, l]) => { arrow(src, s0); for (let b = s0 + 1; b < s0 + l; b++) arrow(b - 1, b); });
+  }
+  svg.innerHTML = s;
+}
+/* compare methods */
+function cmpFiles() { const sc = W.scn.seed || SEED_FULL; return (sc.files || []).filter(f => f.size > 0).map(f => f.path); }
+function renderCompare() {
+  const sel0 = $("#cmpFile"), files = cmpFiles(), want = files.join("|");
+  if (sel0.dataset.k !== want) { sel0.innerHTML = files.length ? files.map(p => `<option value="${esc(p)}">${esc(p)}</option>`).join("") : '<option value="">(no files in this layout)</option>'; sel0.dataset.k = want; const d = files.find(p => p === "/data/big.db") || files[0]; if (d) sel0.value = d; }
+  const path = sel0.value; if (!path) { $("#cmp").innerHTML = '<p class="empty">This scenario starts without files.</p>'; return; }
+  const cards = ["contiguous", "chained", "fat", "inode", "extents"].map(alloc => {
+    const m = mkfs({ ...W.cfg, alloc }); seedFS(m, W.scn.seed || SEED_FULL);
+    const r = walk(m, path, false); if (r.err) return "";
+    const ino = r.ino, n = m.inodes[ino], bl = fblocks(m, ino), mb = fmeta(m, ino), k = Math.min(10, bl.length - 1);
+    const own = new Set(bl), mset = new Set(mb), others = new Set();
+    m.inodes.forEach((x, i) => { if (x && i !== ino) owned(m, i).forEach(b => others.add(b)); });
+    let mini = ""; for (let b = 0; b < m.nb; b++) mini += `<i class="${b < m.data0 ? "r" : own.has(b) ? "o" : mset.has(b) ? "m" : others.has(b) ? "x" : ""}" title="block ${b}"></i>`;
+    const reads = alloc === "contiguous" ? 0 : alloc === "chained" ? k : alloc === "fat" ? 1 : bmap(m, ino, k).meta.length;
+    const entry = { contiguous: `start ${n.start}, length ${n.size}`, chained: `start ${n.first}, length ${n.size}`, fat: `start ${n.first} (chain in the FAT)`, inode: `${n.direct.length} direct${n.ind ? ", single" : ""}${n.dind ? ", double" : ""}`, extents: n.ext.map(([s0, l]) => `(${s0},${l})`).join(" ") }[alloc];
+    const grow = { contiguous: "only into its reserved blocks", chained: "yes, any free block", fat: "yes, any free block", inode: `yes, up to ${DIRECT + PPB + PPB * PPB} blocks here`, extents: "yes; contiguous growth stays one extent" }[alloc];
+    return `<div class="cmpc" style="--fc:${fcol(ino)}"><h3>${ALLOC_NAME[alloc]}</h3><div class="mini">${mini}</div>
+      <div class="kv"><span>Runs of blocks</span><span>${runsOf(bl)}</span><span>Pointer / extent blocks</span><span>${mb.length}</span><span>Reads before data block ${k}</span><span>${reads}${alloc === "fat" ? " (cached)" : ""}</span></div>
+      <div class="sub">Table entry: ${esc(entry)}</div><div class="sub">Can it grow? ${grow}</div></div>`;
+  }).join("");
+  $("#cmp").innerHTML = `<div class="cmpgrid">${cards}</div><p class="sub" style="margin:8px 0 0">Filled squares: this file's data blocks. Striped: its pointer or extent blocks. Grey: other files. Shaded at the start: superblock, maps, FAT, journal and inode table. Disk of ${W.cfg.nblocks} blocks, free space by ${W.cfg.free === "list" ? "free-block list" : "bit table"}.</p>`;
+}
+$("#cmpFile").addEventListener("change", renderCompare);
+$("#atab").addEventListener("click", e => { const tr = e.target.closest("tr.file"); if (!tr) return; const m = view(), ino = +tr.dataset.ino; if (selIno(m) === ino) sel = null; else setSel(m, ino); render(); });
+$("#dgrid").addEventListener("click", e => { const c = e.target.closest(".blk"); if (!c) return; const m = view(), ino = lastR[+c.dataset.b] && lastR[+c.dataset.b].ino; if (ino == null || selIno(m) === ino) sel = null; else setSel(m, ino); render(); });
+$("#tree").addEventListener("click", e => { const t = e.target.closest("[data-ino]"); if (!t) return; const m = view(), ino = +t.dataset.ino; if (selIno(m) === ino) sel = null; else setSel(m, ino); render(); });
+window.addEventListener("resize", () => { const m = view(); drawArrows(m, selIno(m)); });
 
 /* ---------- timeline and log ---------- */
 function renderTimeline() {
@@ -1214,7 +1478,7 @@ function renderButtons() {
   $("#btnRecover").disabled = !W.crashed; $("#btnCrash").disabled = W.crashed; $("#btnStep").disabled = W.crashed; $("#btnPlay").disabled = W.crashed;
   $("#btnCompact").textContent = W.mem.alloc === "contiguous" ? "Compact" : "Defragment"; $("#btnCompact").disabled = W.crashed; $("#btnDrop").disabled = W.crashed;
 }
-function render() { $("#tick").textContent = W.t; renderProcs(); renderCPU(); renderDisk(); renderFS(); renderTimeline(); renderLog(); machineLabels(); renderButtons(); }
+function render() { $("#tick").textContent = W.t; renderProcs(); renderCPU(); renderDisk(); renderAlloc(); renderFree(); renderFS(); renderTimeline(); renderLog(); machineLabels(); renderButtons(); }
 
 /* ---------- control ---------- */
 function load(key, applySet) {
@@ -1222,11 +1486,12 @@ function load(key, applySet) {
   const sc = SCENARIOS[key];
   if (applySet) { const base = { alloc: "inode", free: "bitmap", nblocks: "64", ninodes: "32", caches: "on", pcache: "8", journal: "off", lock: "none" }; Object.entries({ ...base, ...(sc.set || {}) }).forEach(([k, v]) => { const el = $("#" + k); if (el) el.value = v; }); }
   W = newWorld(readCfg(), sc);
+  sel = SEL_DEFAULT[key] ? { path: SEL_DEFAULT[key], ino: null } : null; $("#cmpFile").dataset.k = "";
   (sc.progs || []).forEach(k => addProcess(W, k));
   $("#tip").textContent = sc.tip;
   $("#tasks").innerHTML = ["Identify", "Observe", "Modify"].map((h, i) => `<div class="task"><b>${h}</b>${esc(sc.tasks[i])}</div>`).join("");
   $("#verify").textContent = "Check it on the lab machine:  " + (VERIFY[key] || "stat FILE ; ls -li ; df -i");
-  machineSVG(); render();
+  machineSVG(); render(); renderCompare();
 }
 function tickOnce() { if (W.crashed) { stop(); render(); return; } const ev = step(W); render(); animateEvents(ev); if (W.crashed) stop(); }
 function stop() { if (timer) { clearInterval(timer); timer = null; } $("#btnPlay").textContent = "Play"; }
@@ -1326,6 +1591,89 @@ function renderReal() {
 $("#btnReal").addEventListener("click", renderReal);
 $("#btnRealEx").addEventListener("click", () => { $("#realIn").value = EXAMPLE; renderReal(); });
 $("#btnRealClr").addEventListener("click", () => { $("#realIn").value = ""; $("#realOut").innerHTML = ""; });
+
+
+/* ---------- floating control bar: forwards to the controls at the top of the page ---------- */
+function makeFloatBar(cfg) {
+  const q = s => document.querySelector(s);
+  const bar = document.createElement("div");
+  bar.className = "fbar"; bar.setAttribute("role", "toolbar"); bar.setAttribute("aria-label", "Simulation controls");
+  const row = document.createElement("div"); row.className = "fb-row";
+  const tray = document.createElement("div"); tray.className = "fb-row fb-tray";
+  bar.append(row, tray);
+  const syncs = [];
+  const mkBtn = (proxy, label, o = {}) => {
+    const b = document.createElement("button"); b.type = "button"; b.textContent = label; if (o.cls) b.className = o.cls; if (o.title) b.title = o.title;
+    b.addEventListener("click", () => { const p = q(proxy); if (p && !p.disabled) p.click(); });
+    syncs.push(() => { const p = q(proxy); if (!p) { b.hidden = true; return; } if (o.mirrorText) b.textContent = p.textContent; b.disabled = p.disabled; b.hidden = o.showIf ? !o.showIf() : false; });
+    return b;
+  };
+  const mkSel = (proxy, label, o = {}) => {
+    const wrap = document.createElement("span"); wrap.className = "fb-grp";
+    if (label) { const l = document.createElement("span"); l.className = "fb-l" + (o.optLabel ? " opt" : ""); l.textContent = label; wrap.append(l); }
+    const s = document.createElement("select"); s.setAttribute("aria-label", label || proxy); if (o.maxw) s.style.maxWidth = o.maxw; wrap.append(s);
+    let key = "";
+    s.addEventListener("change", () => { const p = q(proxy); if (!p) return; p.value = s.value; p.dispatchEvent(new Event("change", { bubbles: true })); });
+    syncs.push(() => {
+      const p = q(proxy); if (!p) { wrap.hidden = true; return; }
+      const k = [...p.options].map(o2 => o2.value + "=" + o2.text).join("|");
+      if (k !== key) { s.innerHTML = p.innerHTML; key = k; }
+      if (document.activeElement !== s) s.value = p.value;
+      s.disabled = p.disabled; wrap.hidden = o.showIf ? !o.showIf() : false;
+    });
+    return wrap;
+  };
+  const scrollToHeading = txt => { const h = [...document.querySelectorAll("h2")].find(x => x.textContent.trim().startsWith(txt)); if (h) (h.closest("section,aside") || h).scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" }); };
+  /* main row */
+  row.append(mkBtn("#btnPlay", "Play", { cls: "primary", mirrorText: true }), mkBtn("#btnStep", "Step"), mkSel("#speed", ""), mkBtn("#btnReset", "Reset"));
+  const tick = document.createElement("span"); tick.className = "fb-tick"; tick.innerHTML = 'Tick<b>0</b>'; row.append(tick);
+  syncs.push(() => { const t = q("#tick"); if (t) tick.querySelector("b").textContent = t.textContent; });
+  const ticker = document.createElement("button"); ticker.type = "button"; ticker.className = "fb-ticker"; ticker.title = "Last event — click to open the full log";
+  ticker.addEventListener("click", () => scrollToHeading(cfg.logHeading || "What just happened"));
+  syncs.push(() => { const li = q("#log li"); if (!li) { ticker.textContent = "Nothing has happened yet."; return; } const t = li.querySelector(".t"), body = li.lastElementChild; ticker.innerHTML = `<b>${t ? t.textContent : ""}</b>`; ticker.append(document.createTextNode(body ? body.textContent : li.textContent)); ticker.style.color = li.classList.contains("warn") ? "var(--irq)" : ""; });
+  row.append(ticker);
+  const more = document.createElement("button"); more.type = "button"; more.className = "fb-more"; more.textContent = "More";
+  let open = false; try { open = localStorage.getItem(cfg.key + "-tray") === "1"; } catch (e) {}
+  const setOpen = v => { open = v; tray.hidden = !v; more.setAttribute("aria-expanded", v ? "true" : "false"); try { localStorage.setItem(cfg.key + "-tray", v ? "1" : "0"); } catch (e) {} };
+  more.addEventListener("click", () => setOpen(!open)); row.append(more); setOpen(open);
+  /* tray */
+  (cfg.tray || []).forEach(it => {
+    if (it.type === "btn") tray.append(mkBtn(it.proxy, it.label, it));
+    else if (it.type === "sel") tray.append(mkSel(it.proxy, it.label, it));
+    else if (it.type === "el") { tray.append(it.el); if (it.sync) syncs.push(it.sync); }
+  });
+  if (cfg.jumps && cfg.jumps.length) {
+    const j = document.createElement("span"); j.className = "fb-grp"; j.innerHTML = '<span class="fb-l">Go to</span>';
+    cfg.jumps.forEach(([label, heading]) => { const b = document.createElement("button"); b.type = "button"; b.className = "fb-jump"; b.textContent = label; b.addEventListener("click", () => scrollToHeading(heading)); j.append(b); });
+    tray.append(j);
+  }
+  document.body.append(bar);
+  const anchor = q(cfg.anchor);
+  if (anchor && "IntersectionObserver" in window) { const io = new IntersectionObserver(es => bar.classList.toggle("on", !es[0].isIntersecting)); io.observe(anchor); }
+  else bar.classList.add("on");
+  const sync = () => { try { syncs.forEach(f => f()); } catch (e) {} };
+  sync(); setInterval(sync, 200);
+  return bar;
+}
+
+{
+  const chip = document.createElement("span"); chip.className = "fb-chip"; chip.innerHTML = '<span class="fb-l">Tracing</span><span class="nm"></span><button type="button" aria-label="Stop tracing this file">×</button>';
+  chip.querySelector("button").addEventListener("click", () => { sel = null; render(); });
+  const scn = (...ks) => () => ks.includes(scenarioKey) || (W && W.crashed && ks.includes("crash"));
+  makeFloatBar({ key: "filelab", anchor: "header + .controls",
+    tray: [
+      { type: "sel", proxy: "#view", label: "Show", maxw: "230px" },
+      { type: "sel", proxy: "#prog", label: "Add process", maxw: "260px" },
+      { type: "btn", proxy: "#btnAdd", label: "Start" },
+      { type: "el", el: chip, sync: () => { const m = view(), ino = selIno(m); chip.hidden = ino == null; if (ino != null) { chip.style.setProperty("--c", fcol(ino)); chip.querySelector(".nm").textContent = pathsOf(m, ino)[0] || "inode " + ino; } } },
+      { type: "btn", proxy: "#btnDrop", label: "Drop caches", showIf: scn("cache", "path", "empty") },
+      { type: "btn", proxy: "#btnCompact", label: "Compact", mirrorText: true, showIf: scn("frag", "random", "empty") },
+      { type: "btn", proxy: "#btnCrash", label: "Crash now", cls: "danger", showIf: scn("crash", "empty") },
+      { type: "btn", proxy: "#btnRecover", label: "Recover", showIf: () => scn("crash", "empty")() || (W && W.crashed) },
+      { type: "sel", proxy: "#dpol", label: "Disk scheduling", optLabel: true },
+    ],
+    jumps: [["Machine", "Machine view"], ["Disk", "Disk"], ["Tables", "File allocation table"], ["Inodes", "Directory tree"], ["Log", "What just happened"]] });
+}
 
 const saved = store.get("filelab-scn");
 if (saved && SCENARIOS[saved]) $("#scenario").value = saved;
