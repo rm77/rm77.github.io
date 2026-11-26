@@ -10,7 +10,7 @@
   --bg:#E7ECF0; --panel:#F9FBFC; --ink:#15202B; --muted:#586775; --line:#B6C2CC; --soft:#DCE3E9;
   --ready:#10857A; --readyfill:#E1F3F0; --run:#D98200; --runfill:#FFF1D6; --blk:#7449C0; --blkfill:#EEE6FA;
   --exit:#8A939C; --exitfill:#EFF1F2; --disk:#2E7FD6; --irq:#D93A2F; --meta:#5B6B7A; --metafill:#D5DDE5;
-  --sbc:#1F3A5F; --bmpc:#2A9D5C; --fatc:#B07A00; --jrnc:#8E44AD; --itabc:#C2560C;
+  --disp:#8E44AD; --screen:#0F1A14; --screenink:#9BE8B0; --sbc:#1F3A5F; --bmpc:#2A9D5C; --fatc:#B07A00; --jrnc:#8E44AD; --itabc:#C2560C;
   --sans:"Atkinson Hyperlegible","Segoe UI",system-ui,-apple-system,sans-serif;
   --mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
 }
@@ -18,7 +18,7 @@
   --bg:#10171E; --panel:#18222C; --ink:#E4EAF0; --muted:#98A6B3; --line:#344351; --soft:#223040;
   --ready:#3CC4B4; --readyfill:#0F2D2A; --run:#F5A524; --runfill:#35270B; --blk:#AC8CEB; --blkfill:#261C39;
   --exit:#7F8993; --exitfill:#1C232A; --disk:#6AA8F0; --irq:#FF7A6E; --meta:#9AA8B5; --metafill:#2A3642;
-  --sbc:#7FA7D9; --bmpc:#5CC98A; --fatc:#E1B84A; --jrnc:#C08BE6; --itabc:#F0975A; color-scheme:dark } }
+  --disp:#C08BE6; --screen:#07100B; --screenink:#9BE8B0; --sbc:#7FA7D9; --bmpc:#5CC98A; --fatc:#E1B84A; --jrnc:#C08BE6; --itabc:#F0975A; color-scheme:dark } }
 *,*::before,*::after{box-sizing:border-box}
 [hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 var(--sans);
@@ -183,12 +183,44 @@ body{padding-bottom:150px}
 .fb-chip button{min-height:24px;padding:0 7px;border-radius:999px;font-size:13px;line-height:1}
 .fb-jump{background:none;border:none;color:var(--ink);text-decoration:underline;text-underline-offset:3px;padding:4px 6px}
 .fb-more[aria-expanded="true"]{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+.fb-term{background:var(--screen);border-radius:9px;padding:6px 10px;display:grid;gap:4px}
+.fb-term-h{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:var(--screenink);opacity:.8}
+.fb-term-h span:first-child{font-weight:700}
+.fb-term-s{margin:0;color:var(--screenink);font:13px/1.4 var(--mono);white-space:pre-wrap;word-break:break-word;min-height:4.2em;max-height:7.2em;overflow:hidden}
+.fb-termbtn{position:relative}
+.fb-termbtn[aria-expanded="true"]{background:var(--screen);color:var(--screenink);border-color:var(--screen)}
+.fb-termbtn .dot{position:absolute;top:3px;right:3px;width:8px;height:8px;border-radius:50%;background:var(--irq)}
 @media (max-width:600px){
   .fbar{left:0;bottom:0;width:100%;transform:translate(0,140%);border-radius:14px 14px 0 0;padding-bottom:max(8px,env(safe-area-inset-bottom,0px))}
   .fbar.on{transform:translate(0,0)}
   .fb-ticker,.fb-l.opt{display:none}
 }
 @media (prefers-reduced-motion:reduce){.fbar{transition:none}}
+/* process memory, byte ruler, display, folding */
+.pmem{display:grid;gap:5px;background:var(--bg);border-radius:8px;padding:7px 9px;font-size:13px}
+.pmem .var{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline;min-width:0}
+.pmem code{font:700 12.5px var(--mono)}
+.pmem .str{font:12.5px var(--mono);background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:1px 5px;white-space:pre-wrap;word-break:break-all;max-width:100%}
+.pmem .str i{color:var(--muted);font-style:normal}
+.pmem .fill{display:inline-block;width:80px;height:7px;border-radius:4px;background:var(--soft);overflow:hidden;vertical-align:middle}
+.pmem .fill i{display:block;height:100%;background:var(--run)}
+.ruler{position:relative;height:30px;display:flex;border:1px solid var(--line);border-radius:5px;overflow:hidden;background:var(--panel)}
+.ruler .seg{border-right:1px dashed var(--line);font:10px var(--mono);color:var(--muted);padding:2px 3px;position:relative;z-index:1}
+.ruler .rng{position:absolute;top:0;bottom:0;background:color-mix(in srgb,var(--run) 40%,transparent)}
+.ruler .off{position:absolute;top:-2px;bottom:-2px;width:3px;margin-left:-1px;background:var(--irq);z-index:2}
+.ruler-ax{display:flex;justify-content:space-between;font:10px var(--mono);color:var(--muted)}
+.dispgrid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:14px}
+@media (max-width:820px){.dispgrid{grid-template-columns:minmax(0,1fr)}}
+.side2{display:grid;gap:10px;align-content:start}
+.screen{background:var(--screen);color:var(--screenink);font:13px/1.45 var(--mono);border-radius:8px;padding:8px 10px;height:170px;overflow-y:auto;white-space:pre-wrap;word-break:break-word}
+.screen .cur{display:inline-block;width:8px;height:14px;background:var(--screenink);vertical-align:-2px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.bytes{display:flex;flex-wrap:wrap;gap:3px;min-height:30px;align-items:center}
+.byte{font:600 13px var(--mono);min-width:22px;height:24px;display:inline-grid;place-items:center;padding:0 4px;border-radius:5px;border:1.5px solid var(--disp);background:var(--panel)}
+.cap{height:8px;border-radius:4px;background:var(--soft);overflow:hidden} .cap i{display:block;height:100%;background:var(--disp)}
+.fold{font-size:12px;padding:2px 9px;margin-left:auto}
+.card.folded > :not(:first-child){display:none!important}
+.card.folded .chead{margin-bottom:0}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style></head><body>
 <main>
@@ -227,6 +259,7 @@ body{padding-bottom:150px}
       <span class="gl">Page cache</span><select id="pcache" aria-label="Page cache size"><option value="4">4 blocks</option><option value="8" selected>8 blocks</option><option value="16">16 blocks</option></select>
       <span class="gl">Journaling</span><select id="journal" aria-label="Journaling"><option value="off" selected>Off</option><option value="on">On</option></select>
       <span class="gl">Locking</span><select id="lock" aria-label="Locking"><option value="none" selected>None</option><option value="file">Whole file</option><option value="record">Record</option></select>
+      <span class="gl">stdout goes to</span><select id="stdout" aria-label="Where stdout goes"><option value="tty" selected>Terminal (line-buffered)</option><option value="file">File out.txt (fully buffered)</option></select>
       <span class="gl">CPU slice</span><select id="quantum" aria-label="CPU time slice"><option value="2">2 ms</option><option value="4" selected>4 ms</option><option value="8">8 ms</option></select>
       <span class="gl">applies on Reset</span>
     </div>
@@ -256,6 +289,18 @@ body{padding-bottom:150px}
     </section>
     <aside class="card side" id="cpu"></aside>
   </div>
+
+  <section class="card">
+    <div class="chead"><h2>Display (terminal)</h2><span class="sub">write(1, …) copies text into the terminal's output queue (24 characters); the screen prints 1 character per ms.</span></div>
+    <div class="dispgrid">
+      <div class="screen" id="screen" aria-live="off"></div>
+      <div class="side2">
+        <div><span class="lbl">Terminal output queue (kernel)</span><div class="bytes" id="oq"></div><div class="cap" style="margin-top:4px"><i id="oqcap"></i></div></div>
+        <div><span class="lbl">Writers blocked on a full queue</span><div class="chips" id="ow"></div></div>
+        <div class="kv" id="ostats"></div>
+      </div>
+    </div>
+  </section>
 
   <section class="card">
     <div class="chead"><h2>Disk</h2>
@@ -329,6 +374,8 @@ body{padding-bottom:150px}
       <span><i style="background:var(--blk)"></i>Blocked (disk or lock)</span>
       <span><i style="background:var(--disk)"></i>Disk reading</span>
       <span><i style="background:var(--disk);opacity:.45"></i>Disk writing (flusher or journal)</span>
+      <span><i style="background:var(--disp)"></i>Screen printing</span>
+      <span><i style="background:repeating-linear-gradient(135deg,var(--run) 0 3px,var(--panel) 3px 6px)"></i>CPU copying data into a process</span>
       <span><i style="background:var(--irq)"></i>Crashed</span>
     </div>
   </section>
@@ -347,6 +394,7 @@ const FCOL = ["#E07A5F","#3D85C6","#6AA84F","#E69138","#8E7CC3","#45818E","#C27B
 const DIRECT = 4, PPB = 4, MAXEXT = 3, IPB = 8;
 const SB = 0, BMP = 1, FATB = 2, JRN = 3, ITAB = 4;
 const RD_DL = 15, WR_DL = 100, FLUSH_MAX = 3;
+const BS = 64, BUFSZ = 128, OUTCAP = 24, LOWWATER = 16;
 const ALLOC_NAME = { contiguous: "contiguous", chained: "chained", fat: "FAT (chain in a table)", inode: "indexed (inode pointers)", extents: "extents" };
 
 const clone = o => o == null ? o : JSON.parse(JSON.stringify(o));
@@ -356,7 +404,7 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;",
 function mkfs(cfg) {
   const itb = Math.ceil(cfg.ninodes / IPB), nb = cfg.nblocks, data0 = ITAB + itb;
   const m = { alloc: cfg.alloc, free: cfg.free, nb, data0, itb, bitmap: Array(nb).fill(false), freeList: [], fat: Array(nb).fill(-1),
-    next: Array(nb).fill(-1), inodes: Array(cfg.ninodes).fill(null), dirs: {}, vals: {}, root: 0 };
+    next: Array(nb).fill(-1), inodes: Array(cfg.ninodes).fill(null), dirs: {}, vals: {}, data: {}, root: 0 };
   for (let b = 0; b < data0; b++) m.bitmap[b] = true;
   for (let b = data0; b < nb; b++) m.freeList.push(b);
   const r = ialloc(m);
@@ -374,7 +422,7 @@ function balloc(m, near) {
   for (let b = m.data0; b < m.nb; b++) if (!m.bitmap[b]) { takeBlock(m, b); return b; }
   return -1;
 }
-function bfree(m, b) { if (b < m.data0 || b >= m.nb) return; m.bitmap[b] = false; if (m.free === "list") m.freeList.unshift(b); else m.freeList.push(b); m.fat[b] = -1; m.next[b] = -1; delete m.vals[b]; }
+function bfree(m, b) { if (b < m.data0 || b >= m.nb) return; m.bitmap[b] = false; if (m.free === "list") m.freeList.unshift(b); else m.freeList.push(b); m.fat[b] = -1; m.next[b] = -1; delete m.vals[b]; if (m.data) delete m.data[b]; }
 function freeRuns(m) { const runs = []; let s = -1; for (let b = m.data0; b <= m.nb; b++) { const f = b < m.nb && !m.bitmap[b]; if (f && s < 0) s = b; if (!f && s >= 0) { runs.push([s, b - s]); s = -1; } } return runs; }
 function findRun(m, n) { const r = freeRuns(m).find(x => x[1] >= n); return r ? r[0] : -1; }
 
@@ -431,7 +479,7 @@ function fappend(m, ino) {
   const n = m.inodes[ino], units = new Set(["ino:" + ino]);
   if (m.alloc === "contiguous") {
     if (n.size >= n.cap) return { err: `EFBIG: a contiguous file cannot grow past the ${n.cap} block${n.cap === 1 ? "" : "s"} reserved when it was created` };
-    const phys = n.start + n.size; n.size++; m.vals[phys] = 0; return { phys, units };
+    const phys = n.start + n.size; n.size++; m.vals[phys] = 0; if (!m.data) m.data = {}; m.data[phys] = ""; return { phys, units };
   }
   const need = appendNeed(m, n);
   if (need === Infinity) return { err: "EFBIG: the file has used every direct, single indirect and double indirect pointer" };
@@ -457,7 +505,7 @@ function fappend(m, ino) {
     if (last && phys === near) last[1]++; else n.ext.push([phys, 1]);
     if (n.ext.length > MAXEXT && n.eblk < 0) n.eblk = balloc(m, -1);
   }
-  n.size++; m.vals[phys] = 0;
+  n.size++; m.vals[phys] = 0; if (!m.data) m.data = {}; m.data[phys] = "";
   return { phys, units };
 }
 function fcreate(m, parent, name, type, cap, target) {
@@ -479,7 +527,7 @@ function fcreate(m, parent, name, type, cap, target) {
   m.inodes[ino] = n; m.dirs[parent][name] = ino;
   return { ino, units };
 }
-function fremove(m, parent, name) {
+function fremove(m, parent, name, isOpen) {
   const ino = m.dirs[parent][name]; if (ino === undefined) return { err: `ENOENT: "${name}" does not exist` };
   const n = m.inodes[ino], units = new Set(["dir:" + parent, "ino:" + ino]);
   if (n.type === "d" && Object.keys(m.dirs[ino] || {}).length) return { err: `ENOTEMPTY: directory "${name}" is not empty` };
@@ -487,12 +535,26 @@ function fremove(m, parent, name) {
   n.links--;
   if (n.type === "d") { n.links = 0; m.inodes[parent].links--; units.add("ino:" + parent); }
   let freed = [];
+  if (n.links <= 0 && isOpen && n.type === "f") { n.orphan = true; return { ino, units, freed, gone: false, deferred: true }; }
   if (n.links <= 0) {
     freed = owned(m, ino); freed.forEach(b => bfree(m, b));
     if (freed.length) { units.add("bmp"); if (m.alloc === "fat") units.add("fat"); }
     m.inodes[ino] = null; delete m.dirs[ino];
   }
   return { ino, units, freed, gone: n.links <= 0 };
+}
+function ftrunc(m, ino) {
+  const n = m.inodes[ino], units = new Set(["ino:" + ino]);
+  let freed = [];
+  if (m.alloc === "contiguous") { n.size = 0; }
+  else {
+    freed = [...fblocks(m, ino), ...fmeta(m, ino).filter(b => b !== n.dblk)];
+    freed.forEach(b => bfree(m, b));
+    Object.assign(n, { size: 0, first: -1, last: -1, direct: [], ind: null, dind: null, ext: [], eblk: -1 });
+    if (freed.length) { units.add("bmp"); if (m.alloc === "fat") units.add("fat"); }
+  }
+  n.bytes = 0;
+  return { units, freed };
 }
 function walk(m, path, follow, depth) {
   depth = depth || 0; if (depth > 8) return { err: "ELOOP: too many symbolic links" };
@@ -531,7 +593,7 @@ function fsck(m) {
     refs[c] = (refs[c] || 0) + 1;
   }));
   m.inodes.forEach((n, ino) => {
-    if (!n || ino === m.root) return;
+    if (!n || ino === m.root || n.orphan) return;
     if (!refs[ino]) issues.push({ kind: "orphan", text: `Inode ${ino} is in use but no directory entry refers to it (orphan).` });
     else if (n.type !== "d" && n.links !== refs[ino]) issues.push({ kind: "links", text: `Inode ${ino} (${nm(ino)}) has link count ${n.links} but ${refs[ino]} directory entr${refs[ino] === 1 ? "y refers" : "ies refer"} to it.` });
   });
@@ -544,7 +606,7 @@ function getUnit(m, u) {
   if (k === "ptr") return m.next[i];
   if (k === "ino") return clone(m.inodes[i]);
   if (k === "dir") return m.dirs[i] ? clone(m.dirs[i]) : null;
-  if (k === "data") return m.vals[i];
+  if (k === "data") return { v: m.vals[i], d: m.data ? m.data[i] : undefined };
 }
 function setUnit(m, u, v) {
   const [k, a] = u.split(":"), i = +a;
@@ -553,7 +615,7 @@ function setUnit(m, u, v) {
   else if (k === "ptr") m.next[i] = v;
   else if (k === "ino") m.inodes[i] = clone(v);
   else if (k === "dir") { if (v) m.dirs[i] = clone(v); else delete m.dirs[i]; }
-  else if (k === "data") { if (v === undefined) delete m.vals[i]; else m.vals[i] = v; }
+  else if (k === "data") { if (!v || v.v === undefined) delete m.vals[i]; else m.vals[i] = v.v; if (!m.data) m.data = {}; if (!v || v.d === undefined) delete m.data[i]; else m.data[i] = v.d; }
 }
 function unitBlock(m, u) {
   const [k, a] = u.split(":"), i = +a;
@@ -570,7 +632,7 @@ function relayout(m) {
   const old = clone(m), moved = { n: 0 };
   m.bitmap = Array(m.nb).fill(false); for (let b = 0; b < m.data0; b++) m.bitmap[b] = true;
   m.freeList = []; for (let b = m.data0; b < m.nb; b++) m.freeList.push(b);
-  m.fat = Array(m.nb).fill(-1); m.next = Array(m.nb).fill(-1); m.vals = {};
+  m.fat = Array(m.nb).fill(-1); m.next = Array(m.nb).fill(-1); m.vals = {}; m.data = {};
   const freeSave = m.free; m.free = "bitmap";
   const order = m.inodes.map((n, i) => [n, i]).filter(x => x[0]).sort((a, b) => { const fa = owned(old, a[1])[0] ?? 1e9, fb = owned(old, b[1])[0] ?? 1e9; return fa - fb; });
   order.forEach(([n, ino]) => {
@@ -580,7 +642,7 @@ function relayout(m) {
     const size = n.size, cap = n.cap;
     Object.assign(n, { size: 0, start: -1, first: -1, last: -1, direct: [], ind: null, dind: null, ext: [], eblk: -1 });
     if (m.alloc === "contiguous") { const s = findRun(m, Math.max(cap, 1)); for (let b = s; b < s + Math.max(cap, 1); b++) takeBlock(m, b); if (s !== old.inodes[ino].start) moved.n += Math.max(cap, 1) - size; n.start = s; n.cap = Math.max(cap, 1); }
-    for (let i = 0; i < size; i++) { const r = fappend(m, ino); if (old.vals[oldBlocks[i]] !== undefined) m.vals[r.phys] = old.vals[oldBlocks[i]]; if (r.phys !== oldBlocks[i]) moved.n++; }
+    for (let i = 0; i < size; i++) { const r = fappend(m, ino); if (old.vals[oldBlocks[i]] !== undefined) m.vals[r.phys] = old.vals[oldBlocks[i]]; if (old.data && old.data[oldBlocks[i]] !== undefined) m.data[r.phys] = old.data[oldBlocks[i]]; if (r.phys !== oldBlocks[i]) moved.n++; }
   });
   m.free = freeSave;
   if (m.free === "list") { m.freeList = []; for (let b = m.data0; b < m.nb; b++) if (!m.bitmap[b]) m.freeList.push(b); }
@@ -593,12 +655,20 @@ function seedFS(m, spec) {
     const p = walk(m, "/" + parts.join("/"), true); return fcreate(m, p.ino, name, type, cap).ino;
   };
   (spec.dirs || []).forEach(d => mk(d, "d"));
-  const files = (spec.files || []).map(f => ({ ...f, ino: mk(f.path, "f", f.cap || f.size), left: f.size }));
+  const files = (spec.files || []).map(f => { const text = f.text != null ? f.text : fillText(f.path, f.size); const size = f.text != null ? Math.max(1, Math.ceil(text.length / BS)) : f.size; return { ...f, text, size, ino: mk(f.path, "f", f.cap || size), left: size }; });
   if (spec.interleave) { let more = true; while (more) { more = false; files.forEach(f => { if (f.left > 0) { fappend(m, f.ino); f.left--; more = true; } }); } }
   else files.forEach(f => { for (let i = 0; i < f.size; i++) fappend(m, f.ino); });
+  files.forEach(f => { const bl = fblocks(m, f.ino); bl.forEach((b, i) => { m.data[b] = f.text.slice(i * BS, (i + 1) * BS); }); m.inodes[f.ino].bytes = f.text.length; });
   (spec.links || []).forEach(([target, path]) => { const parts = path.split("/").filter(Boolean), name = parts.pop(); const p = walk(m, "/" + parts.join("/"), true); fcreate(m, p.ino, name, "l", 0, target); });
 }
 
+function fillText(path, size) {
+  const nm = path.split("/").pop(); let t = "";
+  if (nm === "counter") return "0";
+  for (let i = 0; t.length < size * BS; i++) t += `${nm} record ${String(i).padStart(3, "0")}: ${"abcdefghijklmnopqrstuvwxyz".slice(i % 7, i % 7 + 12)}\n`;
+  return t.slice(0, size * BS);
+}
+function fileBytes(m, ino) { const n = m.inodes[ino]; if (!n) return 0; return n.bytes != null ? Math.min(n.bytes, n.size * BS) : n.size * BS; }
 /* ======================= small LRU cache ======================= */
 class LRU {
   constructor(cap) { this.cap = cap; this.m = new Map(); }
@@ -612,8 +682,33 @@ class LRU {
 
 /* ======================= programs ======================= */
 const NOTES = "/home/student/notes.txt";
+const NOTES_TEXT = "Shopping: buy milk, eggs and rice.\nCall mum on Sunday evening.\nFinish the OS lab: inodes, blocks and the page cache.\nRead chapter 12 before the Thursday lecture.\nBring the USB stick with the Alpine image to the lab.\n";
+function catOps(path, fd, line, endLine) {
+  /* open, read 64 bytes at a time, write(1); indexes are relative, patched by catProg/relocate */
+  return [{ k: "open", path, fd, line, rel: 0 }, { k: "readb", fd, n: 64, line, relEof: 4 }, { k: "write1", from: "buf", line }, { k: "jmpRel", rel: 1, line }, { k: "close", fd, line }, { k: "exit", line: endLine }];
+}
+function fixRel(ops) {
+  /* turn relative cat loops into absolute jumps */
+  for (let i = 0; i < ops.length; i++) if (ops[i].rel === 0) { const b = i; ops[b + 1].eof = b + ops[b + 1].relEof; ops[b + 3] = { k: "jmp", to: b + 1, line: ops[b + 3].line }; }
+  return ops;
+}
+function catProg(path, file, what) {
+  return { file, what, lines: [`fd = open("${path.split("/").pop()}", O_RDONLY);`, "while ((n = read(fd, buf, 64)) > 0)", "  write(1, buf, n);", "close(fd);", "exit(0);"],
+    threads: [() => [{ k: "open", path, fd: 3, line: 0 }, { k: "readb", fd: 3, n: 64, eof: 4, line: 1 }, { k: "write1", from: "buf", line: 2 }, { k: "jmp", to: 1, line: 1 }, { k: "close", fd: 3, line: 3 }, { k: "exit", line: 4 }]] };
+}
+function logProg(app) {
+  const path = app ? "/tmp/append.log" : "/tmp/shared.log";
+  return { file: app ? "./log-append (2 threads)" : "./log-overwrite (2 threads)", what: app ? "two threads append to one log with O_APPEND" : "two threads write one log, each with its own offset",
+    lines: ["/* both threads run this */", `fd = open("${path}", O_WRONLY${app ? " | O_APPEND" : ""});`, "for (i = 0; i < 3; i++)", app ? "  write(fd, line, len);   /* always at the end of the file */" : "  write(fd, line, len);   /* at this open file's own offset */", "close(fd);", "/* thread 1 then prints the log */", `cat("${path}");`],
+    threads: [1, 2].map(t => () => { const o = [{ k: "open", path, fd: 3, append: app, line: 1 }];
+      for (let i = 0; i < 3; i++) o.push({ k: "writeb", fd: 3, text: th => `${th.id} entry ${i}\n`, line: 3 }, { k: "cpu", n: 2, line: 2 });
+      o.push({ k: "close", fd: 3, line: 4 });
+      if (t === 2) { o.push({ k: "exit", line: 4 }); return o; }
+      o.push({ k: "cpu", n: 12, line: 5 });
+      return fixRel(o.concat(catOps(path, 5, 6, 6))); }) };
+}
 const PROGRAMS = {
-  cat: { file: "./cat notes.txt", what: "opens a file and reads its 4 blocks",
+  cat: { file: "./readblocks notes.txt", what: "opens a file and reads its 4 blocks",
     lines: [`fd = open("${NOTES}", O_RDONLY);`, "for (i = 0; i < 4; i++) {", "  read(fd, buf, BLOCK);   /* block i */", "}", "close(fd);", "exit(0);"],
     threads: [() => { const o = [{ k: "open", path: NOTES, fd: 3, line: 0 }]; for (let i = 0; i < 4; i++) o.push({ k: "cpu", n: 1, line: 1 }, { k: "read", fd: 3, blk: i, line: 2 }); o.push({ k: "close", fd: 3, line: 4 }, { k: "exit", line: 5 }); return o; }] },
   cat1: { file: "./head -c 1k notes.txt", what: "opens a file and reads only its first block",
@@ -658,14 +753,74 @@ const PROGRAMS = {
   counter: { file: "./count (2 threads)", what: "two threads each add 1 to a shared counter 3 times",
     lines: ['/* both threads run this */', 'fd = open("/shared/counter", O_RDWR);', "for (i = 0; i < 3; i++) {", "  lock(fd, record 0);", "  read(fd, &v, BLOCK);", "  v = v + 1;", "  write(fd, &v, BLOCK);", "  unlock(fd, record 0);", "}", "close(fd);"],
     threads: [0, 1].map(() => () => { const o = [{ k: "open", path: "/shared/counter", fd: 3, line: 1 }]; for (let i = 0; i < 3; i++) o.push({ k: "lock", fd: 3, rec: 0, line: 3 }, { k: "read", fd: 3, blk: 0, line: 4 }, { k: "cpu", n: 3, line: 5 }, { k: "write", fd: 3, blk: 0, inc: true, line: 6 }, { k: "unlock", fd: 3, rec: 0, line: 7 }); o.push({ k: "close", fd: 3, line: 9 }, { k: "exit", line: 9 }); return o; }) },
+  catscr: { file: "./cat notes.txt", what: "reads a file in 64-byte chunks and writes each chunk to the screen",
+    lines: ['fd = open("notes.txt", O_RDONLY);', "while ((n = read(fd, buf, 64)) > 0)", "  write(1, buf, n);        /* straight to the screen */", "close(fd);", "exit(0);"],
+    threads: [() => [{ k: "open", path: NOTES, fd: 3, line: 0 }, { k: "readb", fd: 3, n: 64, eof: 4, line: 1 }, { k: "write1", from: "buf", line: 2 }, { k: "jmp", to: 1, line: 1 }, { k: "close", fd: 3, line: 3 }, { k: "exit", line: 4 }]] },
+  chunks: { file: "./chunks notes.txt", what: "reads 100 bytes at a time and prints what read() returned",
+    lines: ['fd = open("notes.txt", O_RDONLY);', "while ((n = read(fd, buf, 100)) > 0)", '  printf("read %d bytes, offset now %ld\\n", n, pos);', 'printf("read returned 0: end of file\\n");', "close(fd);", "exit(0);"],
+    threads: [() => [{ k: "open", path: NOTES, fd: 3, line: 0 }, { k: "readb", fd: 3, n: 100, eof: 4, line: 1 }, { k: "printf", fmt: th => `read ${th.mem.n} bytes, offset now ${th.fds[3] ? th.fds[3].off : "?"}\n`, line: 2 }, { k: "jmp", to: 1, line: 1 }, { k: "printf", fmt: "read returned 0: end of file\n", line: 3 }, { k: "close", fd: 3, line: 4 }, { k: "exit", line: 5 }]] },
+  span: { file: "./span notes.txt", what: "reads bytes 50–79, which lie in two different blocks",
+    lines: ['fd = open("notes.txt", O_RDONLY);', "lseek(fd, 50, SEEK_SET);", "n = read(fd, buf, 30);      /* bytes 50-79 */", 'printf("[%.*s]\\n", n, buf);', "close(fd);", "exit(0);"],
+    threads: [() => [{ k: "open", path: NOTES, fd: 3, line: 0 }, { k: "lseek", fd: 3, off: 50, line: 1 }, { k: "readb", fd: 3, n: 30, line: 2 }, { k: "printf", fmt: th => `[${(th.mem.buf || "").replace(/\n/g, " ")}]\n`, line: 3 }, { k: "close", fd: 3, line: 4 }, { k: "exit", line: 5 }]] },
+  count5: { file: "./count5", what: "prints 5 lines with work in between",
+    lines: ["for (i = 1; i <= 5; i++) {", '  printf("line %d\\n", i);', "  work();               /* 4 ms */", "}", "exit(0);              /* exit() flushes stdio */"],
+    threads: [() => { const o = []; for (let i = 1; i <= 5; i++) o.push({ k: "printf", fmt: `line ${i}\n`, line: 1 }, { k: "cpu", n: 4, line: 2 }); o.push({ k: "exit", line: 4 }); return o; }] },
+  answer: { file: "./answer", what: "prints without a newline, then crashes",
+    lines: ['printf("The answer is 42");   /* no \\n */', "compute_more();", "*(int *)0 = 1;               /* bug: SIGSEGV */"],
+    threads: [() => [{ k: "printf", fmt: "The answer is 42", line: 0 }, { k: "cpu", n: 6, line: 1 }, { k: "segv", line: 2 }]] },
+  answerf: { file: "./answer-flush", what: "the same, with fflush(stdout) before the crash",
+    lines: ['printf("The answer is 42");   /* no \\n */', "fflush(stdout);", "compute_more();", "*(int *)0 = 1;               /* bug: SIGSEGV */"],
+    threads: [() => [{ k: "printf", fmt: "The answer is 42", line: 0 }, { k: "fflush", line: 1 }, { k: "cpu", n: 6, line: 2 }, { k: "segv", line: 3 }]] },
+  forkhi: { file: "./forkhello", what: "printf without a newline, then fork()",
+    lines: ['printf("hello ");             /* no \\n yet */', "pid = fork();", 'printf("from the %s\\n", pid ? "parent" : "child");', "exit(0);"],
+    threads: [() => [{ k: "printf", fmt: "hello ", line: 0 }, { k: "fork", line: 1 }, { k: "printf", fmt: th => `from the ${th.child ? "child" : "parent"}\n`, line: 2 }, { k: "exit", line: 3 }]] },
+  forkhif: { file: "./forkhello-flush", what: "the same, with fflush(stdout) before fork()",
+    lines: ['printf("hello ");             /* no \\n yet */', "fflush(stdout);", "pid = fork();", 'printf("from the %s\\n", pid ? "parent" : "child");', "exit(0);"],
+    threads: [() => [{ k: "printf", fmt: "hello ", line: 0 }, { k: "fflush", line: 1 }, { k: "fork", line: 2 }, { k: "printf", fmt: th => `from the ${th.child ? "child" : "parent"}\n`, line: 3 }, { k: "exit", line: 4 }]] },
+  lsdir: { file: "./ls -i /home/student", what: "lists a directory: names and inode numbers",
+    lines: ['d = opendir("/home/student");', "n = readdir(d, buf);      /* names and inode numbers */", "write(1, buf, n);", "closedir(d);", "exit(0);"],
+    threads: [() => [{ k: "cpu", n: 1, line: 0 }, { k: "readdir", path: "/home/student", line: 1 }, { k: "write1", from: "buf", line: 2 }, { k: "cpu", n: 1, line: 3 }, { k: "exit", line: 4 }]] },
+  wc: { file: "./wc notes.txt", what: "counts lines, words and bytes",
+    lines: ['fd = open("notes.txt", O_RDONLY);', "while ((n = read(fd, buf, 64)) > 0)", "  count(buf, n, &lines, &words, &bytes);", 'printf("%d %d %d notes.txt\\n", lines, words, bytes);', "close(fd);", "exit(0);"],
+    threads: [() => [{ k: "open", path: NOTES, fd: 3, line: 0 }, { k: "readb", fd: 3, n: 64, eof: 4, line: 1 },
+      { k: "calc", line: 2, fn: th => { const a = th.acc; a.l = a.l || 0; a.w = a.w || 0; a.c = a.c || 0; for (const ch of th.mem.buf || "") { a.c++; if (ch === "\n") a.l++; const sp = /\s/.test(ch); if (!sp && !a.inw) a.w++; a.inw = !sp; } } },
+      { k: "jmp", to: 1, line: 1 }, { k: "printf", fmt: th => `${th.acc.l || 0} ${th.acc.w || 0} ${th.acc.c || 0} notes.txt\n`, line: 3 }, { k: "close", fd: 3, line: 4 }, { k: "exit", line: 5 }]] },
+  cp: { file: "./cp notes.txt copy.txt", what: "copies a file with a read/write loop",
+    lines: ['in  = open("notes.txt", O_RDONLY);', 'out = creat("copy.txt", 4 blocks);', "while ((n = read(in, buf, 64)) > 0)", "  write(out, buf, n);       /* into the page cache */", "close(in); close(out);", 'printf("copied %d bytes\\n", total);', "exit(0);"],
+    threads: [() => [{ k: "open", path: NOTES, fd: 3, line: 0 }, { k: "create", path: "/home/student/copy.txt", cap: 4, fd: 4, line: 1 }, { k: "readb", fd: 3, n: 64, eof: 5, line: 2 }, { k: "writeb", fd: 4, from: "buf", line: 3 }, { k: "jmp", to: 2, line: 2 },
+      { k: "close", fd: 3, line: 4 }, { k: "close", fd: 4, line: 4 }, { k: "printf", fmt: th => `copied ${(th.acc && th.acc.total) || 0} bytes\n`, line: 5 }, { k: "exit", line: 6 }]] },
+  catcopy: catProg("/home/student/copy.txt", "./cat copy.txt", "prints copy.txt on the screen"),
+  wrback: { file: "./write-read-back", what: "writes a file, then reads it back before it reaches the disk",
+    lines: ['fd = creat("/tmp/msg.txt", 2 blocks);', 'write(fd, "This text was written a moment ago.\\n", 36);', "lseek(fd, 0, SEEK_SET);", "n = read(fd, buf, 64);", "write(1, buf, n);", "close(fd);", "exit(0);"],
+    threads: [() => [{ k: "create", path: "/tmp/msg.txt", cap: 2, fd: 3, line: 0 }, { k: "writeb", fd: 3, text: "This text was written a moment ago.\n", line: 1 }, { k: "lseek", fd: 3, off: 0, line: 2 },
+      { k: "readb", fd: 3, n: 64, line: 3 }, { k: "write1", from: "buf", line: 4 }, { k: "close", fd: 3, line: 5 }, { k: "exit", line: 6 }]] },
+  forkrd: { file: "./fork-read", what: "parent and child read through one shared open file",
+    lines: ['fd = open("notes.txt", O_RDONLY);', "pid = fork();              /* the child shares fd's offset */", "n = read(fd, buf, 35);", 'printf("%s read [%.*s]\\n", who, n, buf);', "close(fd);", "exit(0);"],
+    threads: [() => [{ k: "open", path: NOTES, fd: 3, line: 0 }, { k: "fork", line: 1 }, { k: "readb", fd: 3, n: 35, line: 2 }, { k: "printf", fmt: th => `${th.child ? "child " : "parent"} read [${(th.mem.buf || "").replace(/\n/g, " ")}]\n`, line: 3 }, { k: "close", fd: 3, line: 4 }, { k: "exit", line: 5 }]] },
+  twoopen: { file: "./two-opens", what: "opens the same file twice and reads through both",
+    lines: ['a = open("notes.txt", O_RDONLY);', 'b = open("notes.txt", O_RDONLY);   /* a second open file */', 'n = read(a, buf, 34); printf("a: [%s]\\n", buf);', 'n = read(b, buf, 34); printf("b: [%s]\\n", buf);', 'n = read(a, buf, 28); printf("a: [%s]\\n", buf);', "close(a); close(b);", "exit(0);"],
+    threads: [() => { const pr = (w, l) => ({ k: "printf", fmt: th => `${w}: [${(th.mem.buf || "").replace(/\n/g, " ")}]\n`, line: l });
+      return [{ k: "open", path: NOTES, fd: 3, line: 0 }, { k: "open", path: NOTES, fd: 4, line: 1 }, { k: "readb", fd: 3, n: 34, line: 2 }, pr("a", 2), { k: "readb", fd: 4, n: 34, line: 3 }, pr("b", 3), { k: "readb", fd: 3, n: 28, line: 4 }, pr("a", 4), { k: "close", fd: 3, line: 5 }, { k: "close", fd: 4, line: 5 }, { k: "exit", line: 6 }]; }] },
+  logw: logProg(false), logwa: logProg(true),
+  rewrite: { file: "./rewrite notes.txt", what: "rewrites a file with O_TRUNC, then prints it",
+    lines: ['printf("before: %d blocks free\\n", free_blocks());', 'fd = open("notes.txt", O_WRONLY | O_TRUNC);', 'write(fd, "Only this line is left.\\n", 24);', "close(fd);", 'printf("after:  %d blocks free\\n", free_blocks());', 'cat("notes.txt");', "exit(0);"],
+    threads: [() => fixRel([{ k: "printf", fmt: (th, W) => `before: ${freeCount(W.mem)} blocks free\n`, line: 0 }, { k: "open", path: NOTES, fd: 3, trunc: true, line: 1 }, { k: "writeb", fd: 3, text: "Only this line is left.\n", line: 2 }, { k: "close", fd: 3, line: 3 },
+      { k: "printf", fmt: (th, W) => `after:  ${freeCount(W.mem)} blocks free\n`, line: 4 }, ...catOps(NOTES, 5, 5, 6)])] },
+  delopen: { file: "./delete-open", what: "unlinks a file it still has open, then keeps reading it",
+    lines: ['fd = open("notes.txt", O_RDONLY);', 'unlink("notes.txt");          /* removes the only name */', 'ls("/home/student");          /* the name is gone */', "n = read(fd, buf, 64);        /* still works */", "write(1, buf, n);", 'printf("\\n%d blocks free before close\\n", free);', "close(fd);                    /* last reference */", 'printf("%d blocks free after close\\n", free);', "exit(0);"],
+    threads: [() => [{ k: "open", path: NOTES, fd: 3, line: 0 }, { k: "unlink", path: NOTES, line: 1 }, { k: "readdir", path: "/home/student", line: 2 }, { k: "write1", from: "buf", line: 2 },
+      { k: "readb", fd: 3, n: 64, line: 3 }, { k: "write1", from: "buf", line: 4 }, { k: "printf", fmt: (th, W) => `\n${freeCount(W.mem)} blocks free before close\n`, line: 5 }, { k: "close", fd: 3, line: 6 },
+      { k: "printf", fmt: (th, W) => `${freeCount(W.mem)} blocks free after close\n`, line: 7 }, { k: "exit", line: 8 }]] },
   compute: { file: "./compress big.tar", what: "CPU-bound: computes, no file I/O",
     lines: ["for (b = 0; b < 4; b++)", "  compress_block(b);", "exit(0);"], threads: [() => [{ k: "cpu", n: 6, line: 1 }, { k: "cpu", n: 6, line: 1 }, { k: "cpu", n: 6, line: 1 }, { k: "cpu", n: 6, line: 1 }, { k: "exit", line: 2 }]] },
 };
 
 const SEED_FULL = { dirs: ["/home", "/home/student", "/var", "/var/log", "/tmp", "/data", "/shared"],
-  files: [{ path: NOTES, size: 4 }, { path: "/var/log/app.log", size: 1, cap: 2 }, { path: "/shared/counter", size: 1 }, { path: "/data/big.db", size: 12 }] };
-const SEED_SCATTER = { ...SEED_FULL, files: [{ path: NOTES, size: 4 }, { path: "/shared/counter", size: 1 }, { path: "/data/big.db", size: 12 }, { path: "/data/other.db", size: 12 }], interleave: true };
-const SEED_DEEP = { ...SEED_FULL, files: [{ path: NOTES, size: 4 }, { path: "/data/big.db", size: 20 }] };
+  files: [{ path: NOTES, size: 4, text: NOTES_TEXT }, { path: "/var/log/app.log", size: 1, cap: 2 }, { path: "/shared/counter", size: 1 }, { path: "/data/big.db", size: 12 }] };
+const SEED_SCATTER = { ...SEED_FULL, files: [{ path: NOTES, size: 4, text: NOTES_TEXT }, { path: "/shared/counter", size: 1 }, { path: "/data/big.db", size: 12 }, { path: "/data/other.db", size: 12 }], interleave: true };
+const SEED_DEEP = { ...SEED_FULL, files: [{ path: NOTES, size: 4, text: NOTES_TEXT }, { path: "/data/big.db", size: 20 }] };
+const SEED_LOGS = { ...SEED_FULL, files: [...SEED_FULL.files, { path: "/tmp/shared.log", size: 1, text: "", cap: 2 }, { path: "/tmp/append.log", size: 1, text: "", cap: 2 }] };
+const SEED_LS = { ...SEED_FULL, dirs: [...SEED_FULL.dirs, "/home/student/photos"], files: [...SEED_FULL.files, { path: "/home/student/todo.txt", size: 1, text: "1. revise inodes\n2. finish lab 5\n" }], links: [["notes.txt", "/home/student/latest"]] };
 const SEED_MIN = { dirs: ["/tmp"], files: [] };
 
 const VERIFY = {
@@ -679,6 +834,22 @@ const VERIFY = {
   cache: "cat /proc/diskstats ; cat bigfile > /dev/null ; cat /proc/diskstats ; repeat",
   counter: "flock FILE command   (util-linux) serializes shell scripts on a lock file",
   path: "stat / /home /home/student /home/student/notes.txt   (each has its own inode)",
+  lsdir: "ls -i /home/student     ·     ls -lai /home/student   (. and .. are entries too)",
+  wc: "wc notes.txt",
+  cp: "cp notes.txt copy.txt ; cat copy.txt ; ls -li notes.txt copy.txt   (two different inodes)",
+  wrback: "python3 -c \"f=open('/tmp/m.txt','w+'); f.write('hello\\n'); f.seek(0); print(f.read())\"",
+  forkrd: "python3 -c \"import os; fd=os.open('notes.txt',os.O_RDONLY); w='child' if os.fork()==0 else 'parent'; print(w, os.read(fd,20))\"",
+  twoopen: "python3 -c \"a=open('notes.txt'); b=open('notes.txt'); print(a.read(10)); print(b.read(10)); print(a.read(10))\"",
+  logs: "(echo A1; echo A2) 1<> /tmp/s.log & (echo B1; echo B2) 1<> /tmp/s.log; wait; cat /tmp/s.log     then the same with >>",
+  rewrite: "cp notes.txt t.txt ; df . ; echo short > t.txt ; cat t.txt ; df .     ( > opens with O_TRUNC )",
+  delopen: "exec 3< bigfile ; rm bigfile ; df . ; head -c 40 <&3 ; exec 3<&- ; df .",
+  catscr: "cat notes.txt   ·   strace -e trace=read,write cat notes.txt (if strace is installed)",
+  chunks: "python3 -c \"f=open('notes.txt','rb',buffering=0)\nwhile (b:=f.read(100)): print(len(b), f.tell())\nprint(len(f.read(100)))\"",
+  span: "python3 -c \"f=open('notes.txt','rb'); f.seek(50); print(f.read(30))\"",
+  count5: "python3 -c 'import time\nfor i in range(5): print(i); time.sleep(1)'        then the same piped: ... | cat",
+  answer: "python3 -c 'import os; print(\"answer 42\", end=\"\"); os._exit(1)'     then add flush=True to print()",
+  forkhi: "python3 -c 'import os; print(\"hello \", end=\"\"); os.fork(); print(\"bye\")' | cat",
+
 };
 
 const SCENARIOS = {
@@ -712,7 +883,52 @@ const SCENARIOS = {
   path: { name: "10 · Resolving /home/student/notes.txt", progs: ["cat1"], seed: SEED_FULL, set: { alloc: "inode" },
     tip: "With empty caches, every path component costs an inode read and a directory read. Start ./head again with Add process: the dentry and inode caches now answer most lookups.",
     tasks: ["Identify the four inodes and three directory blocks on the path.", "Observe the disk reads of the first run, then of a second run.", "Press Drop caches and run it a third time."] },
-  empty: { name: "11 · Empty machine", progs: [], seed: SEED_FULL, set: {},
+  catscr: { name: "12 · cat: from the file to the screen", progs: ["catscr"], seed: SEED_FULL, set: { alloc: "inode", stdout: "tty" }, cards: "io",
+    tip: "cat reads notes.txt in 64-byte chunks: disk → page cache (DMA) → buf (the CPU copies) → write(1) → terminal output queue → screen. Watch buf fill with text, the offset move along the ruler, and the last read() return 0.",
+    tasks: ["Identify the three places the same bytes pass through: page cache, buf, and the terminal output queue.", "Observe how many disk reads, copies into buf, and write() calls happen for the whole file.", "Start ./cat a second time with Add process: which of these steps disappear?"] },
+  chunks: { name: "13 · Reading in chunks: offset, short read, end of file", progs: ["chunks"], seed: SEED_FULL, set: { alloc: "inode", stdout: "tty" }, cards: "io",
+    tip: "Each read(fd, buf, 100) returns how many bytes it really read and moves the offset. notes.txt has 216 bytes, so the reads return 100, 100, 16 (a short read) and then 0, which means end of file.",
+    tasks: ["Identify the offset marker and the shaded range on the byte ruler.", "Observe the value of n after each read() and the blocks each read needs.", "Predict the return values for read(fd, buf, 64), then compare with ./cat notes.txt."] },
+  span: { name: "14 · A read that spans two blocks", progs: ["span"], seed: SEED_FULL, set: { alloc: "inode", stdout: "tty" }, cards: "io",
+    tip: "Bytes 50–79 begin in block 0 (bytes 0–63) and end in block 1 (bytes 64–127). One read() therefore looks up and copies two blocks.",
+    tasks: ["Identify the block boundary on the byte ruler.", "Observe the two data blocks requested for one read().", "Which offset and length would need three blocks?"] },
+  printf: { name: "15 · printf on a terminal versus into a file", progs: ["count5"], seed: SEED_FULL, set: { alloc: "inode", stdout: "tty" }, cards: "io",
+    tip: "On a terminal stdout is line-buffered: each \\n flushes the buffer with one write(). Set stdout goes to: file out.txt and Reset: stdout is fully buffered and all five lines leave in one write() at exit().",
+    tasks: ["Identify the stdout buffer in the process memory strip.", "Observe the counters: printf calls versus write() system calls, for the terminal and for the file.", "Explain why a log file written with printf can lag behind the program."] },
+  nonl: { name: "16 · printf without a newline, then a crash", progs: ["answer"], seed: SEED_FULL, set: { alloc: "inode", stdout: "tty" }, cards: "io",
+    tip: "\"The answer is 42\" has no newline, so it waits in the stdout buffer. The program then crashes (SIGSEGV): exit() never runs, the buffer is never flushed, and nothing appears. Then start ./answer-flush with Add process.",
+    tasks: ["Identify where the text is when the crash happens.", "Observe the screen and the write() counter for ./answer and ./answer-flush.", "Why do debugging printf calls sometimes print nothing before a crash?"] },
+  fork: { name: "17 · printf before fork(): the text appears twice", progs: ["forkhi"], seed: SEED_FULL, set: { alloc: "inode", stdout: "tty" }, cards: "io",
+    tip: "\"hello \" is still in the stdout buffer when fork() copies the process. Parent and child each own a copy, so each prints it: hello appears twice. Then start ./forkhello-flush with Add process.",
+    tasks: ["Identify the stdout buffer of the parent and of the child right after fork().", "Observe what each process writes to the screen.", "Set stdout goes to: file out.txt and Reset: what does out.txt contain?"] },
+  lsdir: { name: "18 · ls: reading a directory", progs: ["lsdir"], seed: SEED_LS, set: { alloc: "inode", stdout: "tty" }, cards: "io",
+    tip: "A directory is a file of (name, inode number) pairs. readdir() reads the directory block of /home/student and returns those pairs; ls prints them. Nothing about the files' sizes or contents is read.",
+    tasks: ["Identify the directory block of /home/student on the disk.", "Observe which blocks are read: the inode of each directory on the path and one directory block.", "Start ./links first, then ls again: which names share an inode number?"] },
+  wc: { name: "19 · wc: counting lines, words and bytes", progs: ["wc"], seed: SEED_FULL, set: { alloc: "inode", stdout: "tty" }, cards: "io",
+    tip: "wc reads notes.txt in 64-byte chunks and does the counting itself, in user space: the kernel only delivers bytes. The result, 5 lines, 39 words and 216 bytes, is printed with one printf.",
+    tasks: ["Identify where the counting happens: kernel or process.", "Observe the CPU time spent copying versus counting on the timeline.", "Run ./wc again with Add process: what changes in the disk counters?"] },
+  cp: { name: "20 · cp: copying a file, then printing the copy", progs: ["cp"], seed: SEED_FULL, set: { alloc: "inode", stdout: "tty" }, cards: "io",
+    tip: "cp reads 64 bytes into buf, then writes them to copy.txt. Each write lands in the page cache as a dirty block and returns at once; the flusher writes it to disk later. Then start ./cat copy.txt with Add process.",
+    tasks: ["Identify the new inode and blocks of copy.txt.", "Observe the dirty markers on copy.txt's blocks and when the flusher clears them.", "Start ./cat copy.txt: are its blocks read from the disk or from the page cache?"] },
+  wrback: { name: "21 · Write, then read back from the page cache", progs: ["wrback"], seed: SEED_FULL, set: { alloc: "inode", stdout: "tty" }, cards: "io",
+    tip: "The program writes a line, moves the offset back to 0 and reads it again. The read is served from the page cache, before the data has even reached the disk. Use Show: on disk to see that the disk copy is still empty.",
+    tasks: ["Identify the dirty block of /tmp/msg.txt.", "Observe that the read causes no disk read.", "Press Crash now right after the read: what does /tmp/msg.txt contain after Recover?"] },
+  forkrd: { name: "22 · fork(): parent and child share one file offset", progs: ["forkrd"], seed: SEED_FULL, set: { alloc: "inode", stdout: "tty" }, cards: "io",
+    tip: "fork() copies the file descriptor, but both copies point to the same open file, with one offset. So parent and child do not read the same bytes: whoever reads second continues where the first stopped.",
+    tasks: ["Identify the shared open file (fd 3) in both process memory strips.", "Observe the offset after each read() and what each process prints.", "Compare with scenario 23, where one process opens the file twice."] },
+  twoopen: { name: "23 · Two open() calls, two offsets", progs: ["twoopen"], seed: SEED_FULL, set: { alloc: "inode", stdout: "tty" }, cards: "io",
+    tip: "Each open() creates a separate open file with its own offset. Reading through a and through b returns the same first bytes; reading a again continues from a's own offset.",
+    tasks: ["Identify the two file descriptors and their offsets.", "Observe the three lines printed.", "Explain the difference from scenario 22."] },
+  logs: { name: "24 · Two writers: overwrite versus O_APPEND", progs: ["logw"], seed: SEED_LOGS, set: { alloc: "inode", stdout: "tty" }, cards: "io",
+    tip: "Two threads open the same log separately, so each has its own offset starting at 0. They write over each other, and three entries are lost. Then start ./log-append: with O_APPEND every write goes to the current end of the file, and all six entries survive.",
+    tasks: ["Identify the two open files and their offsets.", "Observe which entries survive in /tmp/shared.log.", "Start ./log-append and compare /tmp/append.log."] },
+  rewrite: { name: "25 · Rewriting a file with O_TRUNC", progs: ["rewrite"], seed: SEED_FULL, set: { alloc: "inode", stdout: "tty" }, cards: "io",
+    tip: "Opening with O_TRUNC empties the file at once: its blocks return to the free-space map, and the new text needs only one block. The program prints the free-block count before and after, then the new content.",
+    tasks: ["Identify the blocks notes.txt owned before the rewrite.", "Observe the free-block counts printed and the free-space map.", "Switch to contiguous allocation and Reset: what happens to the reserved blocks?"] },
+  delopen: { name: "26 · Deleting a file that is still open", progs: ["delopen"], seed: SEED_LS, set: { alloc: "inode", stdout: "tty" }, cards: "io",
+    tip: "unlink() removes the name, so ls no longer shows notes.txt, but the program can still read it through its open file. The inode and blocks are freed only at the last close(), as the free-block counts show.",
+    tasks: ["Identify the inode of notes.txt after its name is gone (inode table).", "Observe the free-block count before and after close().", "Why can a full disk stay full after deleting a large log file that a server still has open?"] },
+  empty: { name: "Empty machine (free play)", progs: [], seed: SEED_FULL, set: {},
     tip: "Start any programs with Add process. Every setting can be changed; allocation, disk size and inode count take effect on Reset.",
     tasks: ["Identify the structures on the disk.", "Observe a program of your choice step by step.", "Change one setting at a time and compare the counters."] },
 };
@@ -725,7 +941,10 @@ function newWorld(cfg, scn) {
     pc: new LRU(cfg.caches ? cfg.pcache : 0), dc: new LRU(cfg.caches ? 16 : 0), ic: new LRU(cfg.caches ? 12 : 0),
     dirty: new Map(), ver: {}, queued: new Set(), pend: {}, txns: [], locks: {}, lockQ: {},
     st: { dreads: 0, mreads: 0, hitP: 0, hitD: 0, hitI: 0, dwrites: 0, jwrites: 0, errors: 0 },
-    crashed: false, crashT: null, fsck: null, autoCrashed: false, cpu: { run: 0, idle: 0 }, hist: [], events: [], log: [], fileColor: {} };
+    crashed: false, crashT: null, fsck: null, autoCrashed: false, cpu: { run: 0, idle: 0 }, hist: [], events: [], log: [], fileColor: {},
+    disp: { outQ: [], screen: "", writers: [], printed: 0, busy: 0, owner: null, lockq: [] } };
+  Object.assign(W.st, { printfs: 0, wcalls: 0, copies: 0, copyBytes: 0 }); W.opens = {};
+  if (cfg.stdout === "file") { const p = walk(mem, "/home/student", true); if (!p.err && mem.dirs[p.ino]["out.txt"] === undefined) { const r = fcreate(mem, p.ino, "out.txt", "f", 4); if (r.ino >= 0) mem.inodes[r.ino].bytes = 0; W.disk = clone(mem); } }
   return W;
 }
 function say(W, html, warn) { W.log.push({ t: W.t, html, warn }); if (W.log.length > 200) W.log.shift(); }
@@ -734,10 +953,10 @@ function blockTrack(W, b) { return Math.round(b * 199 / (W.cfg.nblocks - 1)); }
 function addProcess(W, key) {
   const prog = PROGRAMS[key];
   const name = "ABCDEFGHJKLMNPQRSTUVWXYZ"[W.letter % 24];
-  const p = { pid: 100 + W.letter, key, name, color: PCOL[W.letter % PCOL.length], prog, threads: [], born: W.t, finish: null };
+  const p = { pid: 100 + W.letter, key, name, color: PCOL[W.letter % PCOL.length], prog, threads: [], born: W.t, finish: null, stdout: { buf: "" } };
   W.letter++; W.procs.push(p);
   prog.threads.forEach((build, i) => {
-    const th = { id: name + (i + 1), p, ops: build(), pc: 0, rem: 0, state: "ready", wait: null, sys: 0, plan: null, fds: {}, val: 0 };
+    const th = { id: name + (i + 1), p, ops: build(), pc: 0, rem: 0, state: "ready", wait: null, sys: 0, plan: null, fds: {}, val: 0, pre: [], mem: { buf: null, n: null, range: null, fd: null } };
     if (th.ops[0].k === "cpu") th.rem = th.ops[0].n;
     p.threads.push(th); W.threads.push(th); W.readyQ.push(th);
   });
@@ -745,6 +964,7 @@ function addProcess(W, key) {
   return p;
 }
 function advance(th) { th.pc++; const op = th.ops[th.pc]; if (op && op.k === "cpu") th.rem = op.n; }
+function jumpTo(th, to) { th.pc = to; const op = th.ops[th.pc]; if (op && op.k === "cpu") th.rem = op.n; }
 function block(W, th, dev, desc) { th.state = "blocked"; th.wait = { dev, desc, since: W.t }; if (W.cur === th) W.cur = null; }
 function wake(W, th) { if (th.state === "exit") return; th.state = "ready"; th.wait = null; W.readyQ.push(th); }
 function markDirty(W, u) { W.ver[u] = (W.ver[u] || 0) + 1; W.dirty.set(u, W.ver[u]); }
@@ -759,6 +979,18 @@ function commitUnits(W, units, th) {
     W.dsk.q.push({ rw: "w", b: JRN, txn: tx, t0: W.t, th: null, why: `journal: transaction ${tx.id} (${meta.map(unitLabel).join(", ")})` });
     say(W, `Journal: transaction ${tx.id} for ${th ? tchip(th) : "the kernel"} (${meta.map(unitLabel).join(", ")}) is queued for the journal block. Its metadata may reach its home location only after this commit.`);
   }
+}
+function closeFd(W, th, fd) {
+  const f = th.fds[fd]; if (!f) return null; delete th.fds[fd];
+  W.opens[f.ino] = Math.max(0, (W.opens[f.ino] || 1) - 1);
+  const m = W.mem, n = m.inodes[f.ino];
+  if (n && n.orphan && n.links <= 0 && !W.opens[f.ino]) {
+    const freed = owned(m, f.ino); freed.forEach(b => bfree(m, b)); m.inodes[f.ino] = null;
+    const units = new Set(["ino:" + f.ino]); if (freed.length) { units.add("bmp"); if (m.alloc === "fat") units.add("fat"); }
+    commitUnits(W, units, th);
+    say(W, `${tchip(th)} closes the last reference to the deleted file: only now are inode ${f.ino} and its ${freed.length} block${freed.length === 1 ? "" : "s"} (${freed.join(", ")}) freed.`, true);
+  }
+  return f;
 }
 function needInode(W, ino, reads, hits) {
   if (W.ic.has(ino)) { W.ic.get(ino); W.st.hitI++; hits.push(`inode ${ino} (inode cache)`); return; }
@@ -808,7 +1040,12 @@ function plan(W, th, op) {
     if (r.err) return { reads, hits, err: r.err };
     return { reads, hits, effect: () => {
       const n = m.inodes[r.ino]; if (!n) return { err: `ENOENT: ${op.path}` };
-      if (op.k === "open") { th.fds[op.fd] = { ino: r.ino, path: op.path }; return { msg: `open("${esc(op.path)}") returns fd ${op.fd} → inode ${r.ino} (${n.size} block${n.size === 1 ? "" : "s"}).` }; }
+      if (op.k === "open") {
+        th.fds[op.fd] = { ino: r.ino, path: op.path, off: 0, append: !!op.append }; W.opens[r.ino] = (W.opens[r.ino] || 0) + 1;
+        let extra = "";
+        if (op.trunc && n.type === "f") { const t = ftrunc(m, r.ino); commitUnits(W, t.units, th); extra = ` O_TRUNC empties the file${t.freed.length ? ` and frees block${t.freed.length > 1 ? "s" : ""} ${t.freed.join(", ")}` : ""}.`; }
+        return { msg: `open("${esc(op.path)}"${op.append ? ", O_APPEND" : ""}${op.trunc ? ", O_TRUNC" : ""}) returns fd ${op.fd} → inode ${r.ino} (${fileBytes(m, r.ino)} bytes).${extra}` };
+      }
       return { msg: `stat("${esc(op.path)}"): inode ${r.ino}, ${n.type === "d" ? "directory" : n.type === "l" ? "symbolic link" : "regular file"}, ${n.links} link${n.links === 1 ? "" : "s"}, ${n.size} block${n.size === 1 ? "" : "s"}.` };
     } };
   }
@@ -821,10 +1058,15 @@ function plan(W, th, op) {
     if (free >= 0) reads.push({ b: ITAB + Math.floor(free / IPB), why: `the inode table, to take free inode ${free}`, meta: true });
     if ((op.k === "create" && m.alloc === "contiguous") || op.k === "mkdir") { const a = allocRead(W); if (a) reads.push(a); }
     return { reads, hits, effect: () => {
-      const res = fcreate(m, r.ino, r.name, op.k === "mkdir" ? "d" : op.k === "symlink" ? "l" : "f", op.cap, op.target);
+      let res = fcreate(m, r.ino, r.name, op.k === "mkdir" ? "d" : op.k === "symlink" ? "l" : "f", op.cap, op.target);
+      if (res.err && op.k === "create" && res.err.startsWith("EEXIST")) {
+        const ex = m.dirs[r.ino][r.name], ni = m.inodes[ex];
+        if (ni && ni.type === "f") { const t = ftrunc(m, ex); commitUnits(W, t.units, th); if (op.fd) { th.fds[op.fd] = { ino: ex, path: op.path, off: 0 }; W.opens[ex] = (W.opens[ex] || 0) + 1; } return { msg: `creat("${esc(op.path)}"): the file already exists, so it is truncated to 0 bytes and reused (inode ${ex})${op.fd ? `; fd ${op.fd}` : ""}.` }; }
+      }
       if (res.err) return res;
       commitUnits(W, res.units, th); W.ic.put(res.ino); W.dc.put((r.path || "") + "/" + r.name, res.ino);
-      if (op.fd) th.fds[op.fd] = { ino: res.ino, path: op.path };
+      if (op.fd) { th.fds[op.fd] = { ino: res.ino, path: op.path, off: 0 }; W.opens[res.ino] = (W.opens[res.ino] || 0) + 1; }
+      if (op.k === "create" && m.inodes[res.ino]) m.inodes[res.ino].bytes = 0;
       const n = m.inodes[res.ino];
       return { msg: op.k === "symlink" ? `symlink: "${esc(op.path)}" is new inode ${res.ino}, which stores the path "${esc(op.target)}".`
         : `${op.k === "mkdir" ? "mkdir" : "creat"}("${esc(op.path)}") takes inode ${res.ino}${n.type === "f" && m.alloc === "contiguous" ? ` and reserves blocks ${n.start}–${n.start + n.cap - 1}` : ""}${op.fd ? `; fd ${op.fd}` : ""}.` };
@@ -865,7 +1107,76 @@ function plan(W, th, op) {
       return { msg: `write appends block ${m.inodes[f.ino].size - 1} of ${esc(f.path)} at disk block ${res.phys} (page cache, dirty).` };
     } };
   }
-  if (op.k === "close") return { reads, hits, effect: () => { const f = th.fds[op.fd]; delete th.fds[op.fd]; return { msg: `close(fd ${op.fd})${f ? ` releases ${esc(f.path)}` : ""}.` }; } };
+  if (op.k === "readb") {
+    const f = fdOf(); if (!f) return { reads, hits, err: `EBADF: fd ${op.fd} is not open` };
+    const total = fileBytes(m, f.ino), off = f.off, end = Math.min(off + op.n, total);
+    if (off >= total) return { reads, hits, focus: null, effect: () => { th.mem = { buf: "", n: 0, range: [off, off], fd: op.fd }; return { msg: `read(fd ${op.fd}, buf, ${op.n}) returns 0: the offset (${off}) is at the end of ${esc(f.path)} (${total} bytes).`, jump: op.eof }; } };
+    needInode(W, f.ino, reads, hits);
+    const b0 = Math.floor(off / BS), b1 = Math.floor((end - 1) / BS), seen = new Set();
+    for (let i = b0; i <= b1; i++) { const bm = bmap(m, f.ino, i); bm.meta.forEach(x => { if (!seen.has(x.b)) { seen.add(x.b); reads.push({ ...x, meta: true }); } }); reads.push({ b: bm.phys, why: `data block ${i} of ${f.path} (bytes ${i * BS}–${i * BS + BS - 1})` }); }
+    return { reads, hits, focus: { ino: f.ino, i: b0 }, effect: () => {
+      /* the offset is read and advanced atomically here, when the call completes */
+      const off = f.off, T = fileBytes(m, f.ino), end = Math.min(off + op.n, T);
+      if (off >= T) { th.mem = { buf: "", n: 0, range: [off, off], fd: op.fd }; return { msg: `read(fd ${op.fd}, buf, ${op.n}) returns 0: another reader already moved the shared offset to the end (${off}).`, jump: op.eof }; }
+      const b0 = Math.floor(off / BS), b1 = Math.floor((end - 1) / BS);
+      const bl = fblocks(m, f.ino); let txt = "";
+      for (let i = b0; i <= b1; i++) txt += (m.data[bl[i]] || "");
+      const s0 = off - b0 * BS, got = txt.slice(s0, s0 + (end - off));
+      th.mem = { buf: got, n: got.length, range: [off, off + got.length], fd: op.fd }; f.off = off + got.length;
+      const nb = b1 - b0 + 1; th.pre.push({ k: "copy", rem: nb, line: op.line, bytes: got.length });
+      W.st.copies++; W.st.copyBytes += got.length;
+      return { msg: `read(fd ${op.fd}, buf, ${op.n}) reads bytes ${off}–${off + got.length - 1} from ${nb} block${nb > 1 ? "s" : ""} (${b0}${nb > 1 ? `–${b1}` : ""}) and returns ${got.length}${got.length < op.n ? " (a short read: the file ends first)" : ""}. The kernel now copies ${got.length} bytes from the page cache into buf; the offset becomes ${f.off}.` };
+    } };
+  }
+  if (op.k === "writeb") {
+    const f = fdOf(); if (!f) return { reads, hits, err: `EBADF: fd ${op.fd} is not open` };
+    const n = m.inodes[f.ino];
+    const text = op.from === "buf" ? (th.mem.buf || "").slice(0, th.mem.n == null ? undefined : th.mem.n) : typeof op.text === "function" ? op.text(th, W) : op.text;
+    const off0 = f.append ? fileBytes(m, f.ino) : f.off, end = off0 + text.length;
+    needInode(W, f.ino, reads, hits);
+    if (text.length) {
+      const b0 = Math.floor(off0 / BS), b1 = Math.floor((end - 1) / BS), seen = new Set();
+      for (let i = b0; i <= b1 && i < n.size; i++) {
+        const whole = off0 <= i * BS && end >= (i + 1) * BS;
+        const bm = bmap(m, f.ino, i); bm.meta.forEach(x => { if (!seen.has(x.b)) { seen.add(x.b); reads.push({ ...x, meta: true }); } });
+        if (!whole && i * BS < fileBytes(m, f.ino)) reads.push({ b: bm.phys, why: `data block ${i} of ${f.path}, because only part of it is overwritten (read-modify-write)` });
+      }
+      if (b1 >= n.size && m.alloc !== "contiguous") { const a = allocRead(W); if (a) reads.push(a); }
+    }
+    return { reads, hits, focus: { ino: f.ino, i: Math.floor(off0 / BS) }, effect: () => {
+      const nn = m.inodes[f.ino]; if (!nn) return { err: "EBADF" };
+      const before = fileBytes(m, f.ino), start = f.append ? before : f.off, units = new Set(["ino:" + f.ino]), touched = new Set();
+      let p = start, err = null;
+      for (const ch of text) {
+        const bi = Math.floor(p / BS);
+        while (bi >= nn.size) { const a = fappend(m, f.ino); if (a.err) { err = a.err; break; } a.units.forEach(u => units.add(u)); }
+        if (err) break;
+        const b = fblocks(m, f.ino)[bi], o = p % BS; let d = m.data[b] || "";
+        if (d.length < o) d = d.padEnd(o, " ");
+        m.data[b] = d.slice(0, o) + ch + d.slice(o + 1); touched.add(b); W.pc.put(b); units.add("data:" + b); p++;
+      }
+      nn.bytes = Math.max(before, p);
+      f.off = p; th.acc = th.acc || {}; th.acc.total = (th.acc.total || 0) + (p - start);
+      th.mem = { ...th.mem, fd: op.fd, range: [start, p] };
+      commitUnits(W, units, th);
+      th.pre.push({ k: "copy", rem: Math.max(1, touched.size), line: op.line, bytes: p - start, dir: "from" });
+      if (err) return { err: `${err} (after ${p - start} of ${text.length} bytes)` };
+      return { msg: `write(fd ${op.fd}, "${esc(text.replace(/\n/g, "⏎").slice(0, 40))}${text.length > 40 ? "…" : ""}", ${text.length})${f.append ? " with O_APPEND" : ""}: bytes ${start}–${p - 1} of ${esc(f.path)} in block${touched.size > 1 ? "s" : ""} ${[...touched].join(", ")} (page cache, dirty). The offset is now ${p}.` };
+    } };
+  }
+  if (op.k === "readdir") {
+    const r = resolve(W, op.path, { follow: true, reads, hits }); if (r.err) return { reads, hits, err: r.err };
+    const d = m.inodes[r.ino]; if (!d || d.type !== "d") return { reads, hits, err: `ENOTDIR: ${op.path}` };
+    reads.push({ b: d.dblk, why: `the directory block of ${op.path}, to list its entries`, meta: true });
+    return { reads, hits, effect: () => {
+      const ents = Object.entries(m.dirs[r.ino] || {}).sort((a, b) => a[0].localeCompare(b[0]));
+      const txt = ents.map(([nm, i]) => { const x = m.inodes[i]; return `${String(i).padStart(3)} ${nm}${x && x.type === "d" ? "/" : x && x.type === "l" ? " -> " + x.target : ""}`; }).join("\n") + "\n";
+      th.mem = { ...th.mem, buf: txt, n: txt.length, range: null };
+      th.pre.push({ k: "copy", rem: 1, line: op.line, bytes: txt.length });
+      return { msg: `readdir("${esc(op.path)}") reads ${ents.length} entr${ents.length === 1 ? "y" : "ies"} (name and inode number) from directory block ${d.dblk}.` };
+    } };
+  }
+  if (op.k === "close") return { reads, hits, effect: () => { const f = closeFd(W, th, op.fd); return { msg: `close(fd ${op.fd})${f ? ` releases ${esc(f.path)}` : ""}.` }; } };
   if (op.k === "unlink") {
     const r = resolve(W, op.path, { parent: true, follow: true, reads, hits });
     if (r.err) return { reads, hits, err: r.err };
@@ -873,8 +1184,9 @@ function plan(W, th, op) {
     reads.push({ b: d.dblk, why: `the directory block of ${r.path || "/"}, to remove "${r.name}"`, meta: true });
     if (tino !== undefined) { needInode(W, tino, reads, hits); if (m.inodes[tino] && m.inodes[tino].links <= 1) { const a = allocRead(W); if (a && m.free === "bitmap") reads.push(a); } }
     return { reads, hits, effect: () => {
-      const res = fremove(m, r.ino, r.name); if (res.err) return res;
+      const tgt = m.dirs[r.ino][r.name], res = fremove(m, r.ino, r.name, (W.opens[tgt] || 0) > 0); if (res.err) return res;
       commitUnits(W, res.units, th); W.dc.del((r.path || "") + "/" + r.name);
+      if (res.deferred) return { msg: `unlink("${esc(op.path)}") removes the last name, but the file is still open: inode ${res.ino} and its blocks stay allocated until the last close().` };
       return { msg: res.gone ? `unlink("${esc(op.path)}"): the last name is gone, so inode ${res.ino} and ${res.freed.length} block${res.freed.length === 1 ? "" : "s"} (${res.freed.join(", ") || "none"}) are freed.`
         : `unlink("${esc(op.path)}") removes one name; inode ${res.ino} still has ${m.inodes[res.ino].links} link${m.inodes[res.ino].links === 1 ? "" : "s"}, so nothing is freed.` };
     } };
@@ -894,10 +1206,87 @@ function plan(W, th, op) {
   return { reads, hits, err: `unknown operation ${op.k}` };
 }
 function lockKey(W, th, op) { const f = th.fds[op.fd]; if (!f) return null; return W.cfg.lock === "file" ? `${f.ino}` : `${f.ino}:${op.rec}`; }
+function writeOut(W, th, text) {
+  const m = W.mem, r = walk(m, "/home/student/out.txt", true);
+  if (r.err || !m.inodes[r.ino]) { say(W, `${tchip(th)} write(1): out.txt is missing.`, true); return; }
+  const ino = r.ino, n = m.inodes[ino], units = new Set(["ino:" + ino]);
+  let bytes = fileBytes(m, ino);
+  for (const ch of text) {
+    const bi = Math.floor(bytes / BS);
+    if (bi >= n.size) { const a = fappend(m, ino); if (a.err) { W.st.errors++; say(W, `${tchip(th)} write(1) to out.txt fails: ${esc(a.err)}`, true); break; } a.units.forEach(u => units.add(u)); }
+    const b = fblocks(m, ino)[bi]; m.data[b] = (m.data[b] || "") + ch; units.add("data:" + b); W.pc.put(b); bytes++;
+  }
+  n.bytes = bytes; commitUnits(W, units, th);
+}
+function runMicro(W, th) {
+  const mo = th.pre[0];
+  if (mo.k === "copy") { if (!mo.started) { mo.started = true; say(W, mo.dir === "from" ? `${tchip(th)} kernel copies ${mo.bytes} bytes from the process's buffer into the page cache (copy_from_user): the CPU does this work.` : `${tchip(th)} kernel copies ${mo.bytes} bytes from the page cache into the process's buffer (copy_to_user): the CPU does this work.`); W.events.push({ type: "copy" }); } mo.rem--; if (mo.rem <= 0) th.pre.shift(); return; }
+  if (mo.k === "write1") {
+    const D = W.disp;
+    if (D.owner && D.owner !== th && D.owner.state !== "exit" && W.cfg.stdout !== "file") {
+      if (!D.lockq.includes(th)) D.lockq.push(th);
+      block(W, th, "disp", `waiting: ${D.owner.id} is in the middle of a write() to the terminal`);
+      say(W, `${tchip(th)} write(1): ${D.owner.id} is still writing to the terminal, and each write() to a terminal is done as one piece. Blocked.`);
+      return;
+    }
+    if (!mo.started) {
+      mo.started = true; mo.rest = mo.text; W.st.wcalls++; th.sys++; W.events.push({ type: W.cfg.stdout === "file" ? "w1f" : "w1" });
+      if (W.cfg.stdout === "file") { writeOut(W, th, mo.text); say(W, `${tchip(th)} write(1, "${esc(mo.text.replace(/\n/g, "⏎"))}", ${mo.text.length}): stdout is the file out.txt, so the bytes go into the page cache (dirty) instead of the screen.`); th.pre.shift(); return; }
+      say(W, `${tchip(th)} write(1, "${esc(mo.text.replace(/\n/g, "⏎"))}", ${mo.text.length}) system call to the terminal${mo.src === "stdio" ? " (stdio flushed its buffer)" : ""}.`);
+      D.owner = th;
+    }
+    let copied = 0;
+    while (mo.rest.length && W.disp.outQ.length < OUTCAP) { W.disp.outQ.push(mo.rest[0]); mo.rest = mo.rest.slice(1); copied++; }
+    if (!mo.rest.length) { th.pre.shift(); D.owner = null; const nx = D.lockq.shift(); if (nx) wake(W, nx); return; }
+    if (!W.disp.writers.includes(th)) W.disp.writers.push(th);
+    block(W, th, "disp", `terminal output queue full, ${mo.rest.length} characters still to copy`);
+    say(W, `${tchip(th)} write(1): the terminal's output queue is full after ${copied} characters. Blocked until the screen catches up.`);
+  }
+}
+function stdioFlush(W, th, why, line) {
+  const sb = th.p.stdout; if (!sb.buf) return false;
+  th.pre.push({ k: "write1", text: sb.buf, line, src: "stdio" }); say(W, `${tchip(th)} stdio flushes ${sb.buf.length} buffered byte${sb.buf.length === 1 ? "" : "s"} (${why}).`); sb.buf = ""; return true;
+}
 function execute(W, th) {
+  if (th.pre.length) { runMicro(W, th); return; }
   const op = th.ops[th.pc];
   if (op.k === "cpu") { th.rem--; if (th.rem <= 0) advance(th); return; }
+  if (op.k === "jmp") { jumpTo(th, op.to); return; }
+  if (op.k === "calc") { th.acc = th.acc || {}; op.fn(th, W); advance(th); return; }
+  if (op.k === "lseek") { const f = th.fds[op.fd]; th.sys++; if (f) { f.off = op.off; say(W, `${tchip(th)} lseek(fd ${op.fd}, ${op.off}, SEEK_SET): the offset of ${esc(f.path)} is now ${op.off} (no disk access).`); } advance(th); return; }
+  if (op.k === "printf") {
+    const text = typeof op.fmt === "function" ? op.fmt(th, W) : op.fmt, sb = th.p.stdout;
+    sb.buf += text; W.st.printfs++;
+    const tty = W.cfg.stdout !== "file";
+    const flush = (tty && text.includes("\n")) || sb.buf.length >= BUFSZ;
+    say(W, `${tchip(th)} printf("${esc(text.replace(/\n/g, "⏎"))}") copies ${text.length} bytes into the stdout buffer inside the process (${sb.buf.length}/${BUFSZ}). No system call yet${flush ? "" : `: stdout is ${tty ? "line-buffered (terminal) and there is no newline" : "fully buffered (a file) and the buffer is not full"}`}.`);
+    if (flush) stdioFlush(W, th, tty && text.includes("\n") ? "a newline on a line-buffered terminal" : "the buffer is full", op.line);
+    advance(th); return;
+  }
+  if (op.k === "fflush") { if (!stdioFlush(W, th, "fflush(stdout)", op.line)) say(W, `${tchip(th)} fflush(stdout): the buffer is already empty.`); advance(th); return; }
+  if (op.k === "write1") { th.pre.push({ k: "write1", text: op.from === "buf" ? (th.mem.buf || "") : op.text, line: op.line, src: "raw" }); advance(th); return; }
+  if (op.k === "fork") {
+    th.sys++;
+    const P = th.p, name = "ABCDEFGHJKLMNPQRSTUVWXYZ"[W.letter % 24];
+    const c = { pid: 100 + W.letter, key: P.key, name, color: PCOL[W.letter % PCOL.length], prog: P.prog, threads: [], born: W.t, finish: null, stdout: { buf: P.stdout.buf }, parent: P.name };
+    W.letter++; W.procs.push(c);
+    const ct = { id: name + "1", p: c, ops: th.ops.slice(th.pc + 1), pc: 0, rem: 0, state: "ready", wait: null, sys: 0, plan: null, fds: { ...th.fds }, val: th.val, pre: [], mem: { ...th.mem }, child: true };
+    if (ct.ops[0] && ct.ops[0].k === "cpu") ct.rem = ct.ops[0].n;
+    c.threads.push(ct); W.threads.push(ct); W.readyQ.push(ct);
+    Object.values(ct.fds).forEach(f => { W.opens[f.ino] = (W.opens[f.ino] || 0) + 1; });
+    say(W, `${tchip(th)} fork(): child <b>${name}</b> (PID ${c.pid}) gets a copy of ${P.name}'s memory${P.stdout.buf ? `, including the ${P.stdout.buf.length} unflushed byte${P.stdout.buf.length === 1 ? "" : "s"} "${esc(P.stdout.buf)}" in its stdout buffer` : " (its stdout buffer is empty)"}.`, !!P.stdout.buf);
+    advance(th); return;
+  }
+  if (op.k === "segv") {
+    const P = th.p, lost = P.stdout.buf;
+    P.threads.forEach(x => { Object.keys(x.fds).forEach(fd => closeFd(W, x, fd)); x.state = "exit"; x.pre = []; x.plan = null; }); W.readyQ = W.readyQ.filter(x => x.p !== P); W.cur = null;
+    P.finish = W.t + 1; P.killed = "segmentation fault"; P.stdout.buf = "";
+    say(W, `${tchip(th)} writes to address 0: SIGSEGV. The kernel kills <b>${P.name}</b> at once; exit() never runs, so stdio never flushes.${lost ? ` The ${lost.length} bytes "${esc(lost)}" in its stdout buffer are lost.` : ""}`, true);
+    return;
+  }
   if (op.k === "exit") {
+    if (th.p.stdout.buf && th.p.threads.filter(x => x.state !== "exit").length === 1) { stdioFlush(W, th, "exit() flushes stdio", op.line); return; }
+    Object.keys(th.fds).forEach(fd => closeFd(W, th, fd));
     th.state = "exit"; th.wait = null; W.cur = null;
     if (th.p.threads.every(x => x.state === "exit")) { th.p.finish = W.t + 1; say(W, `<b>${th.p.name}</b> (${esc(th.p.prog.file)}) finished at ${W.t + 1} ms.`); }
     return;
@@ -935,7 +1324,7 @@ function execute(W, th) {
   const res = th.plan.effect(); th.plan = null;
   if (res.err) { W.st.errors++; say(W, `${tchip(th)} ${esc(op.k)}() fails: ${esc(res.err)}`, true); }
   else say(W, `${tchip(th)} ${res.msg}`);
-  advance(th);
+  if (res.jump !== undefined) jumpTo(th, res.jump); else advance(th);
 }
 function cpuTick(W) {
   let kind = "idle", who = null;
@@ -1014,7 +1403,7 @@ function crash(W, why) {
   W.threads.forEach(th => { if (th.state !== "exit") { th.state = "exit"; th.killed = true; } });
   W.procs.forEach(p => { if (p.finish == null) { p.finish = W.t; p.killed = true; } });
   W.readyQ = []; W.cur = null; W.dsk.q = []; W.dsk.req = null; W.pc.clear(); W.dc.clear(); W.ic.clear();
-  const lost = W.dirty.size; W.dirty.clear(); W.queued.clear(); W.locks = {}; W.lockQ = {};
+  const lost = W.dirty.size; W.dirty.clear(); W.queued.clear(); W.locks = {}; W.lockQ = {}; W.disp.outQ = []; W.disp.writers = []; W.disp.owner = null; W.disp.lockq = [];
   W.fsck = null;
   say(W, `SYSTEM CRASH at ${W.t} ms${why ? ` (${why})` : ""}. Memory is lost: caches and ${lost} dirty item${lost === 1 ? "" : "s"} that had not reached the disk. Press Recover.`, true);
 }
@@ -1032,14 +1421,19 @@ function recover(W) {
   say(W, W.fsck.length ? `Consistency check found ${W.fsck.length} problem${W.fsck.length === 1 ? "" : "s"}: ${W.fsck.map(x => esc(x.text)).join(" ")}` : "Consistency check: the file system is consistent.", W.fsck.length > 0);
   (W.scn.after || []).forEach(k => addProcess(W, k));
 }
+function dispTick(W) {
+  const D = W.disp;
+  if (D.outQ.length) { const ch = D.outQ.shift(); D.screen += ch; D.printed++; D.busy++; if (D.screen.length > 3000) D.screen = D.screen.slice(-2000); W.events.push({ type: "char" }); }
+  while (D.writers.length && D.outQ.length <= LOWWATER) { const th = D.writers.shift(); wake(W, th); say(W, `The terminal drained its output queue to ${D.outQ.length} characters. ${tchip(th)} wakes to copy the rest.`); }
+}
 function step(W) {
   W.events = [];
   if (W.crashed) { W.t++; return W.events; }
   const c = cpuTick(W);
-  diskTick(W); flushTick(W);
+  diskTick(W); flushTick(W); dispTick(W);
   if (W.scn.autoCrash && !W.autoCrashed && fsck(W.disk).some(x => x.kind === "free")) { W.autoCrashed = true; crash(W, "power failure while the metadata on disk was only partly updated"); }
   W.lastWho = c.who;
-  W.hist.push({ row: c.row, cpu: c.kind, who: c.who ? c.who.id : null, disk: W.dsk.req ? W.dsk.req.rw : null, crash: W.crashed });
+  W.hist.push({ row: c.row, cpu: c.kind, who: c.who ? c.who.id : null, disk: W.dsk.req ? W.dsk.req.rw : null, crash: W.crashed, disp: W.events.some(e => e.type === "char"), copy: c.who && c.who.pre && c.who.pre[0] && c.who.pre[0].k === "copy" });
   if (W.hist.length > 400) W.hist.shift();
   W.t++;
   return W.events;
@@ -1070,7 +1464,7 @@ Object.entries(PROGRAMS).forEach(([k, p]) => $("#prog").insertAdjacentHTML("befo
 function readCfg() {
   return { alloc: $("#alloc").value, free: $("#free").value, nblocks: +$("#nblocks").value, ninodes: +$("#ninodes").value,
     caches: $("#caches").value === "on", pcache: +$("#pcache").value, journal: $("#journal").value === "on", lock: $("#lock").value,
-    quantum: +$("#quantum").value, dpol: $("#dpol").value, flush: 10 };
+    quantum: +$("#quantum").value, dpol: $("#dpol").value, flush: 10, stdout: $("#stdout").value };
 }
 const view = () => (W.crashed || $("#view").value === "disk") ? W.disk : W.mem;
 const fcol = ino => FCOL[ino % FCOL.length];
@@ -1081,19 +1475,20 @@ function machineSVG() {
   const t = (x, y, s, o = {}) => `<text x="${x}" y="${y}" text-anchor="${o.a || "middle"}" font-family="var(--sans)" font-size="${o.s || 14}" font-weight="${o.w || 400}" fill="${o.f || "var(--ink)"}" ${o.id ? `id="${o.id}"` : ""}>${s}</text>`;
   const box = (x, y, w, h, stroke, id, fill) => `<rect ${id ? `id="${id}"` : ""} x="${x}" y="${y}" width="${w}" height="${h}" rx="9" fill="${fill || "var(--panel)"}" stroke="${stroke}" stroke-width="1.5"/>`;
   let s = "";
-  s += box(30, 18, 170, 70, "var(--ink)", "m-cpu") + t(115, 46, "CPU", { w: 700 }) + t(115, 70, "idle", { s: 12, f: "var(--muted)", id: "m-cpu-sub" });
-  s += box(240, 10, 640, 96, "var(--ready)", "m-mem", "var(--readyfill)") + t(256, 30, "Main memory (kernel)", { w: 700, a: "start" });
-  [["dc", "Dentry cache", 252], ["ic", "Inode cache", 408], ["pc", "Page cache", 564], ["dirty", "Dirty items / journal", 720]].forEach(([id, name, x]) => {
-    s += box(x, 40, 148, 56, "var(--line)", "m-" + id) + t(x + 74, 62, name, { s: 13, w: 700 }) + t(x + 74, 84, "", { s: 12, f: "var(--muted)", id: "m-" + id + "-n" });
+  s += box(16, 18, 150, 70, "var(--ink)", "m-cpu") + t(91, 46, "CPU", { w: 700 }) + t(91, 70, "idle", { s: 12, f: "var(--muted)", id: "m-cpu-sub" });
+  s += box(186, 8, 700, 104, "var(--ready)", "m-mem", "var(--readyfill)") + t(200, 28, "Main memory", { w: 700, a: "start" }) + t(330, 28, "user space │ kernel space", { s: 12, f: "var(--muted)", a: "start" });
+  [["proc", "Process memory", 196], ["dc", "Dentry cache", 334], ["ic", "Inode cache", 472], ["pc", "Page cache", 610], ["dirty", "Dirty / journal", 748]].forEach(([id, name, x]) => {
+    s += box(x, 38, 128, 62, id === "proc" ? "var(--run)" : "var(--line)", "m-" + id) + t(x + 64, 60, name, { s: 13, w: 700 }) + t(x + 64, 82, "", { s: 11.5, f: "var(--muted)", id: "m-" + id + "-n" });
   });
-  s += `<line x1="20" y1="140" x2="880" y2="140" stroke="var(--ink)" stroke-width="4" stroke-linecap="round"/>` + t(880, 132, "System bus", { s: 12, f: "var(--muted)", a: "end" });
-  s += `<line x1="115" y1="88" x2="115" y2="138" stroke="var(--ink)"/><line x1="638" y1="106" x2="638" y2="138" stroke="var(--ink)"/>`;
-  s += `<line x1="450" y1="142" x2="450" y2="176" stroke="var(--ink)"/>`;
-  s += box(340, 176, 220, 56, "var(--disk)", "m-ctl") + t(450, 199, "Disk controller (DMA)", { w: 700 }) + t(450, 219, "", { s: 12, f: "var(--muted)", id: "m-q" });
-  s += `<line x1="450" y1="232" x2="450" y2="256" stroke="var(--disk)" stroke-width="1.5"/>`;
-  s += box(340, 256, 220, 36, "var(--disk)", "m-dev", "var(--bg)") + t(450, 279, "", { s: 13, id: "m-dev-t" });
-  s += t(30, 200, "Every cache miss becomes a disk request.", { s: 12, f: "var(--muted)", a: "start" });
-  s += t(30, 218, "Every dirty item is written back later.", { s: 12, f: "var(--muted)", a: "start" });
+  s += `<line x1="329" y1="36" x2="329" y2="104" stroke="var(--muted)" stroke-dasharray="4 3"/>`;
+  s += `<line x1="16" y1="146" x2="886" y2="146" stroke="var(--ink)" stroke-width="4" stroke-linecap="round"/>` + t(886, 138, "System bus", { s: 12, f: "var(--muted)", a: "end" });
+  s += `<line x1="91" y1="88" x2="91" y2="144" stroke="var(--ink)"/><line x1="536" y1="112" x2="536" y2="144" stroke="var(--ink)"/>`;
+  [["dk", 300, "Disk controller (DMA)", "var(--disk)", "m-dev", "disk"], ["dp", 680, "Display controller", "var(--disp)", "m-scr", "screen"]].forEach(([id, cx, name, col, did, dn]) => {
+    s += `<line x1="${cx}" y1="148" x2="${cx}" y2="178" stroke="var(--ink)"/>`;
+    s += box(cx - 110, 178, 220, 54, col, "m-" + id) + t(cx, 200, name, { w: 700 }) + t(cx, 220, "", { s: 12, f: "var(--muted)", id: "m-" + id + "-q" });
+    s += `<line x1="${cx}" y1="232" x2="${cx}" y2="256" stroke="${col}" stroke-width="1.5"/>`;
+    s += box(cx - 110, 256, 220, 36, col, did, "var(--bg)") + t(cx, 279, dn, { s: 13, id: did + "-t" });
+  });
   s += `<g id="m-tokens"></g>`;
   $("#machine").innerHTML = s;
 }
@@ -1103,10 +1498,15 @@ function machineLabels() {
   set("m-dc-n", on ? `${W.dc.m.size}/${W.dc.cap} names` : "off");
   set("m-ic-n", on ? `${W.ic.m.size}/${W.ic.cap} inodes` : "off");
   set("m-pc-n", on ? `${W.pc.m.size}/${W.pc.cap} blocks` : "off");
-  set("m-dirty-n", `${W.dirty.size} dirty${W.cfg.journal ? ` · ${W.txns.filter(x => !x.committed).length} txn open` : ""}`);
-  set("m-q", `queue ${W.dsk.q.length + (W.dsk.req ? 1 : 0)}`);
-  set("m-dev-t", W.crashed ? "power lost" : W.dsk.req ? `${W.dsk.req.rw === "r" ? "reading" : "writing"} block ${W.dsk.req.b}` : `disk · ${W.cfg.nblocks} blocks`);
-  set("m-cpu-sub", W.crashed ? "crashed" : W.cur ? `running ${W.cur.id}` : W.lastWho && W.lastWho.state !== "running" ? `ran ${W.lastWho.id}` : "idle");
+  set("m-dirty-n", `${W.dirty.size} dirty${W.cfg.journal ? ` · ${W.txns.filter(x => !x.committed).length} txn` : ""}`);
+  const th = W.cur || W.lastRun;
+  set("m-proc-n", th ? `${th.id}: buf ${th.mem && th.mem.n != null ? th.mem.n + " B" : "—"} · stdout ${th.p.stdout.buf.length}` : "—");
+  set("m-dk-q", `queue ${W.dsk.q.length + (W.dsk.req ? 1 : 0)}`);
+  set("m-dp-q", `output queue ${W.disp.outQ.length}/${OUTCAP}`);
+  set("m-dev-t", W.crashed ? "power lost" : W.dsk.req ? `${W.dsk.req.rw === "r" ? "reading" : "writing"} block ${W.dsk.req.b}` : `disk · ${W.cfg.nblocks} blocks of ${BS} B`);
+  const last = W.disp.screen.split("\n").filter(Boolean).pop() || "";
+  set("m-scr-t", last ? (last.length > 26 ? "…" + last.slice(-25) : last) : "screen");
+  set("m-cpu-sub", W.crashed ? "crashed" : W.cur ? (W.cur.pre[0] && W.cur.pre[0].k === "copy" ? `copying for ${W.cur.id}` : `running ${W.cur.id}`) : W.lastWho && W.lastWho.state !== "running" ? `ran ${W.lastWho.id}` : "idle");
 }
 function token(points, color, dur) {
   if (reduced) return;
@@ -1128,9 +1528,14 @@ function token(points, color, dur) {
 }
 function animateEvents(evs) {
   const dur = Math.max(180, Math.min(700, +$("#speed").value * 1.6));
+  let chars = 0;
   evs.forEach(e => {
-    if (e.type === "dread") token([[450, 256], [450, 146], [638, 146], [638, 96]], css("--disk"), dur);
-    if (e.type === "dstart" && e.rw === "w") token([[794, 96], [794, 146], [450, 146], [450, 256]], css("--irq"), dur);
+    if (e.type === "dread") token([[300, 256], [300, 152], [674, 152], [674, 100]], css("--disk"), dur);
+    if (e.type === "dstart" && e.rw === "w") token([[812, 100], [812, 152], [300, 152], [300, 256]], css("--irq"), dur);
+    if (e.type === "copy") token([[674, 100], [674, 106], [260, 106], [260, 100]], css("--run"), dur);
+    if (e.type === "w1") token([[260, 100], [260, 152], [680, 152], [680, 178]], css("--disp"), dur);
+    if (e.type === "w1f") token([[260, 100], [260, 106], [674, 106], [674, 100]], css("--disp"), dur);
+    if (e.type === "char" && chars++ === 0) token([[680, 232], [680, 262]], css("--disp"), dur * .6);
   });
 }
 
@@ -1140,7 +1545,7 @@ function renderProcs() {
   if (!W.procs.length) { $("#procs").innerHTML = '<p class="empty">No processes yet. Pick a program under Add process and press Start.</p>'; return; }
   $("#procs").innerHTML = W.procs.map(p => {
     const marks = {};
-    p.threads.forEach(th => { if (th.state === "exit") return; const op = th.ops[th.pc]; if (op) (marks[op.line] = marks[op.line] || []).push(th); });
+    p.threads.forEach(th => { if (th.state === "exit") return; const op = th.pre && th.pre[0] ? th.pre[0] : th.ops[th.pc]; if (op) (marks[op.line] = marks[op.line] || []).push(th); });
     const rows = p.prog.lines.map((txt, i) => {
       const ts = marks[i] || [], cls = ts.some(th => th.state === "running") ? "hot" : ts.some(th => th.state === "blocked") ? "wait" : "";
       return `<div class="row ${cls}"><span class="ln">${i + 1}</span><span>${esc(txt)}</span><span>${ts.map(th => `<span class="pcm">${th.id}</span>`).join("")}</span></div>`;
@@ -1152,8 +1557,39 @@ function renderProcs() {
       const fds = Object.entries(th.fds).map(([fd, f]) => `fd ${fd} → inode ${f.ino}`).join(", ");
       return `<div class="trow">${tchip(th)}<span class="pill" style="--sc:var(${col})">${lab}</span><span class="why">${why}${fds && th.state !== "exit" ? ` · open: ${fds}` : ""}</span></div>`;
     }).join("");
-    return `<div class="proc" style="--pc:${p.color}"><div class="ph"><b>${p.name}</b><code>PID ${p.pid} · ${esc(p.prog.file)}</code>${p.finish != null ? `<span class="done">${p.killed ? "killed by the crash" : `finished at ${p.finish} ms`}</span>` : ""}</div><div class="code">${rows}</div>${trs}</div>`;
+    return `<div class="proc" style="--pc:${p.color}"><div class="ph"><b>${p.name}</b><code>PID ${p.pid} · ${esc(p.prog.file)}</code>${p.parent ? `<span class="sub">child of ${p.parent}</span>` : ""}${p.finish != null ? `<span class="done">${p.killed === true ? "killed by the crash" : p.killed ? "killed: " + p.killed : `finished at ${p.finish} ms`}</span>` : ""}</div><div class="code">${rows}</div>${trs}${pmem(p)}</div>`;
   }).join("");
+}
+const showStr = s => esc(s).replace(/\n/g, '<i>⏎</i>');
+function ruler(m, f, mem) {
+  const T = fileBytes(m, f.ino); if (!T) return "";
+  const nb = Math.ceil(T / BS); let segs = "";
+  for (let i = 0; i < nb; i++) { const w = (Math.min(BS, T - i * BS) / T * 100).toFixed(2); segs += `<span class="seg" style="width:${w}%">block ${i}</span>`; }
+  const rng = mem && mem.range && mem.range[1] > mem.range[0] ? `<span class="rng" style="left:${(mem.range[0] / T * 100).toFixed(2)}%;width:${((mem.range[1] - mem.range[0]) / T * 100).toFixed(2)}%"></span>` : "";
+  return `<div class="ruler" title="bytes of ${esc(f.path)}">${segs}${rng}<span class="off" style="left:${(Math.min(f.off, T) / T * 100).toFixed(2)}%"></span></div><div class="ruler-ax"><span>byte 0</span><span>offset ${f.off}</span><span>${T} bytes</span></div>`;
+}
+function pmem(p) {
+  const usesIO = p.threads.some(th => th.ops.some(o => ["readb", "printf", "write1", "fflush", "fork", "writeb", "readdir"].includes(o.k)));
+  if (!usesIO) return "";
+  const m = W.crashed ? W.disk : W.mem;
+  let h = `<div class="pmem"><span class="lbl">Process memory (user space)</span>`;
+  p.threads.forEach(th => {
+    Object.entries(th.fds).forEach(([fd, f]) => { if (f.off == null || !m.inodes[f.ino]) return; const used = th.mem.fd == fd; h += `<div class="var"><code>fd = ${fd}</code><span class="sub">→ ${esc(f.path.split("/").pop())}, offset ${f.off}</span></div>${used ? ruler(m, f, th.mem) : ""}`; });
+    if (th.mem.buf != null) h += `<div class="var"><code>buf</code> = <span class="str">${th.mem.buf.length ? showStr(th.mem.buf) : "<i>(empty)</i>"}</span></div><div class="var"><code>n = ${th.mem.n}</code><span class="sub">${th.mem.n === 0 ? "end of file" : "bytes returned by the last read()"}</span></div>`;
+  });
+  const sb = p.stdout.buf, tty = W.cfg.stdout !== "file";
+  h += `<div class="var"><code>stdout buffer</code><span class="sub">${tty ? "line-buffered (terminal)" : "fully buffered (file out.txt)"} · ${sb.length}/${BUFSZ} B</span><span class="fill"><i style="width:${Math.min(100, sb.length / BUFSZ * 100)}%"></i></span></div>`;
+  if (sb.length) h += `<div class="var"><span class="str">${showStr(sb)}</span></div>`;
+  return h + "</div>";
+}
+function renderDisplay() {
+  const D = W.disp, sc = $("#screen");
+  sc.innerHTML = esc(D.screen) + '<span class="cur"></span>'; sc.scrollTop = sc.scrollHeight;
+  const show = c => c === " " ? "␣" : c === "\n" ? "⏎" : esc(c);
+  $("#oq").innerHTML = D.outQ.length ? D.outQ.map(c => `<span class="byte">${show(c)}</span>`).join("") : '<span class="empty">empty</span>';
+  $("#oqcap").style.width = (D.outQ.length / OUTCAP * 100) + "%";
+  $("#ow").innerHTML = D.writers.length ? D.writers.map(tchip).join("") : '<span class="empty">none</span>';
+  $("#ostats").innerHTML = `<span>printf() calls</span><span>${W.st.printfs}</span><span>write() system calls</span><span>${W.st.wcalls}</span><span>Characters printed on the screen</span><span>${D.printed}</span><span>read() copies into buf</span><span>${W.st.copies} (${W.st.copyBytes} bytes)</span><span>stdout goes to</span><span>${W.cfg.stdout === "file" ? "out.txt" : "terminal"}</span>`;
 }
 function renderCPU() {
   let core;
@@ -1167,6 +1603,7 @@ function renderCPU() {
     <h3>Blocked</h3>
     <div class="chips"><span class="sub" style="min-width:56px">disk</span>${blocked.filter(t => t.wait.dev === "disk").map(tchip).join("") || '<span class="empty">none</span>'}</div>
     <div class="chips"><span class="sub" style="min-width:56px">lock</span>${blocked.filter(t => t.wait.dev === "lock").map(tchip).join("") || '<span class="empty">none</span>'}</div>
+    <div class="chips"><span class="sub" style="min-width:56px">display</span>${blocked.filter(t => t.wait.dev === "disp").map(tchip).join("") || '<span class="empty">none</span>'}</div>
     ${cache("Dentry cache (path → inode)", W.dc, k => `<span class="chip" style="--c:var(--ready)">${esc(k)} <small>→ ${W.dc.m.get(k)}</small></span>`)}
     ${cache("Inode cache", W.ic, k => `<span class="chip" style="--c:${fcol(k)}">inode ${k}</span>`)}
     ${cache("Page cache (block numbers)", W.pc, k => `<span class="chip" style="--c:var(--disk)">${k}${[...W.dirty.keys()].includes("data:" + k) ? " <small>dirty</small>" : ""}</span>`)}`;
@@ -1273,7 +1710,7 @@ function renderFS() {
 
 /* ---------- selection, allocation tables, free space, compare ---------- */
 let sel = null; /* { path, ino } */
-const SEL_DEFAULT = { tour: NOTES, links: NOTES, path: NOTES, random: "/data/big.db", deep: "/data/big.db", cache: "/data/big.db", crash: "/home/student/draft.txt", counter: "/shared/counter" };
+const SEL_DEFAULT = { wc: NOTES, forkrd: NOTES, twoopen: NOTES, rewrite: NOTES, delopen: NOTES, cp: "/home/student/copy.txt", wrback: "/tmp/msg.txt", logs: "/tmp/shared.log", catscr: NOTES, chunks: NOTES, span: NOTES, tour: NOTES, links: NOTES, path: NOTES, random: "/data/big.db", deep: "/data/big.db", cache: "/data/big.db", crash: "/home/student/draft.txt", counter: "/shared/counter" };
 function selIno(m) {
   if (!sel) return null;
   if (sel.path) { const r = walk(m, sel.path, false); if (!r.err && m.inodes[r.ino] && m.inodes[r.ino].type === "f") return r.ino; }
@@ -1448,7 +1885,7 @@ window.addEventListener("resize", () => { const m = view(); drawArrows(m, selIno
 /* ---------- timeline and log ---------- */
 function renderTimeline() {
   const H = W.hist.slice(-120), off = W.t - H.length, px = 7, x0 = 90, lh = 16, gap = 5;
-  const lanes = [...W.threads.map(th => ({ k: "t", th })), { k: "cpu" }, { k: "disk" }];
+  const lanes = [...W.threads.map(th => ({ k: "t", th })), { k: "cpu" }, { k: "disk" }, { k: "disp" }];
   const Wd = x0 + 120 * px + 20, Ht = 10 + lanes.length * (lh + gap) + 22;
   const svg = $("#timeline"); svg.setAttribute("viewBox", `0 0 ${Wd} ${Ht}`); svg.style.width = Wd + "px"; svg.style.minWidth = Wd + "px";
   const tx = (x, y, s, o = {}) => `<text x="${x}" y="${y}" font-family="${o.m ? "var(--mono)" : "var(--sans)"}" font-size="${o.s || 12}" fill="${o.f || "var(--ink)"}" text-anchor="${o.a || "start"}" font-weight="${o.w || 400}">${s}</text>`;
@@ -1457,35 +1894,53 @@ function renderTimeline() {
   for (let k = Math.ceil(off / 10) * 10; k <= W.t; k += 10) { const x = x0 + (k - off) * px; s += `<line x1="${x}" y1="4" x2="${x}" y2="${ay - 12}" stroke="var(--soft)"/>` + tx(x, ay, k, { a: "middle", s: 10, f: "var(--muted)", m: true }); }
   lanes.forEach((L, li) => {
     const y = 8 + li * (lh + gap);
-    s += tx(8, y + 12, L.k === "t" ? L.th.id : L.k === "cpu" ? "CPU" : "Disk", { w: 700, f: L.k === "t" ? L.th.p.color : "var(--ink)" });
-    const val = h => h.crash ? "crash" : L.k === "t" ? h.row[L.th.id] : L.k === "cpu" ? (h.cpu === "run" ? "run:" + h.who : null) : h.disk;
+    s += tx(8, y + 12, L.k === "t" ? L.th.id : L.k === "cpu" ? "CPU" : L.k === "disk" ? "Disk" : "Display", { w: 700, f: L.k === "t" ? L.th.p.color : "var(--ink)" });
+    const val = h => h.crash ? "crash" : L.k === "t" ? h.row[L.th.id] : L.k === "cpu" ? (h.cpu === "run" ? (h.copy ? "copy:" : "run:") + h.who : null) : L.k === "disk" ? h.disk : (h.disp ? "p" : null);
     let i = 0;
     while (i < H.length) {
       const v = val(H[i]); let e = i; while (e + 1 < H.length && val(H[e + 1]) === v) e++;
       if (v != null && v !== "exit" && v !== undefined) {
-        const f = v === "crash" ? "var(--irq)" : L.k === "disk" ? "var(--disk)" : String(v).startsWith("run") ? "var(--run)" : fill[v];
+        const f = v === "crash" ? "var(--irq)" : L.k === "disk" ? "var(--disk)" : L.k === "disp" ? "var(--disp)" : String(v).startsWith("copy") ? "url(#cpat)" : String(v).startsWith("run") ? "var(--run)" : fill[v];
         s += `<rect x="${x0 + i * px}" y="${y}" width="${(e - i + 1) * px}" height="${lh}" fill="${f}" ${L.k === "disk" && v === "w" ? 'fill-opacity=".45"' : ""} ${v === "ready" ? 'stroke="var(--ready)" stroke-width=".8"' : ""}/>`;
-        if (L.k === "cpu" && String(v).startsWith("run:") && (e - i + 1) * px >= 22) s += tx(x0 + (i + e + 1) * px / 2, y + 12, v.slice(4), { a: "middle", s: 10, w: 700, f: "#15202B" });
+        if (L.k === "cpu" && /^(run|copy):/.test(v) && (e - i + 1) * px >= 22) s += tx(x0 + (i + e + 1) * px / 2, y + 12, v.split(":")[1], { a: "middle", s: 10, w: 700, f: "#15202B" });
       }
       i = e + 1;
     }
   });
   if (!H.length) s += tx(x0, 30, "Press Play or Step to start the clock.", { f: "var(--muted)" });
-  svg.innerHTML = s;
+  svg.innerHTML = `<defs><pattern id="cpat" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="var(--panel)"/><rect width="3" height="6" fill="var(--run)"/></pattern></defs>` + s;
 }
 function renderLog() { $("#log").innerHTML = W.log.slice(-80).reverse().map(l => `<li class="${l.warn ? "warn" : ""}"><span class="t">${l.t} ms</span><span>${l.html}</span></li>`).join(""); }
 function renderButtons() {
   $("#btnRecover").disabled = !W.crashed; $("#btnCrash").disabled = W.crashed; $("#btnStep").disabled = W.crashed; $("#btnPlay").disabled = W.crashed;
   $("#btnCompact").textContent = W.mem.alloc === "contiguous" ? "Compact" : "Defragment"; $("#btnCompact").disabled = W.crashed; $("#btnDrop").disabled = W.crashed;
 }
-function render() { $("#tick").textContent = W.t; renderProcs(); renderCPU(); renderDisk(); renderAlloc(); renderFree(); renderFS(); renderTimeline(); renderLog(); machineLabels(); renderButtons(); }
+function render() { $("#tick").textContent = W.t; renderProcs(); renderCPU(); renderDisplay(); renderDisk(); renderAlloc(); renderFree(); renderFS(); renderTimeline(); renderLog(); machineLabels(); renderButtons(); }
+
+/* ---------- collapsible cards ---------- */
+const CARD_KEYS = [["Machine view", "machine"], ["Processes", "procs"], ["Display", "display"], ["Disk", "disk"], ["File allocation table", "alloc"], ["Free-space map", "alloc"], ["Compare methods", "compare"], ["Directory tree", "fs"], ["Counters", "fs"], ["Your files", "real"], ["Timeline", "timeline"], ["What just happened", "log"]];
+const LAYOUTS = { default: ["display", "real"], io: ["alloc", "compare", "fs", "real"] };
+const cardsByKey = {};
+document.querySelectorAll(".card").forEach(c => {
+  const h = c.querySelector(":scope > .chead > h2"); if (!h) return;
+  const ent = CARD_KEYS.find(([t]) => h.textContent.trim().startsWith(t)); if (!ent) return;
+  (cardsByKey[ent[1]] = cardsByKey[ent[1]] || []).push(c);
+  const b = document.createElement("button"); b.type = "button"; b.className = "fold"; b.textContent = "Hide";
+  b.addEventListener("click", () => { const f = !c.classList.contains("folded"); c.classList.toggle("folded", f); b.textContent = f ? "Show" : "Hide"; if (!f) render(); });
+  c.querySelector(":scope > .chead").append(b);
+});
+function applyLayout(name) {
+  const hide = new Set(LAYOUTS[name] || LAYOUTS.default);
+  Object.entries(cardsByKey).forEach(([k, cs]) => cs.forEach(c => { const f = hide.has(k); c.classList.toggle("folded", f); const b = c.querySelector(":scope > .chead > .fold"); if (b) b.textContent = f ? "Show" : "Hide"; }));
+}
 
 /* ---------- control ---------- */
 function load(key, applySet) {
   stop(); scenarioKey = key; store.set("filelab-scn", key);
   const sc = SCENARIOS[key];
-  if (applySet) { const base = { alloc: "inode", free: "bitmap", nblocks: "64", ninodes: "32", caches: "on", pcache: "8", journal: "off", lock: "none" }; Object.entries({ ...base, ...(sc.set || {}) }).forEach(([k, v]) => { const el = $("#" + k); if (el) el.value = v; }); }
+  if (applySet) { const base = { alloc: "inode", free: "bitmap", nblocks: "64", ninodes: "32", caches: "on", pcache: "8", journal: "off", lock: "none", stdout: "tty" }; Object.entries({ ...base, ...(sc.set || {}) }).forEach(([k, v]) => { const el = $("#" + k); if (el) el.value = v; }); }
   W = newWorld(readCfg(), sc);
+  if (applySet) { applyLayout(sc.cards || "default"); if (window.__fbar) window.__fbar.setTerm(sc.cards === "io"); }
   sel = SEL_DEFAULT[key] ? { path: SEL_DEFAULT[key], ino: null } : null; $("#cmpFile").dataset.k = "";
   (sc.progs || []).forEach(k => addProcess(W, k));
   $("#tip").textContent = sc.tip;
@@ -1508,7 +1963,7 @@ $("#btnCrash").addEventListener("click", () => { stop(); crash(W, "you pressed C
 $("#btnRecover").addEventListener("click", () => { recover(W); render(); });
 $("#view").addEventListener("change", render);
 $("#dpol").addEventListener("change", e => { W.cfg.dpol = e.target.value; say(W, `Disk scheduling set to ${e.target.value}.`); render(); });
-["alloc", "free", "nblocks", "ninodes", "caches", "pcache", "journal", "lock", "quantum"].forEach(id => $("#" + id).addEventListener("change", e => {
+["alloc", "free", "nblocks", "ninodes", "caches", "pcache", "journal", "lock", "quantum", "stdout"].forEach(id => $("#" + id).addEventListener("change", e => {
   say(W, `Setting changed: ${esc(e.target.options[e.target.selectedIndex].text)}. Press Reset to apply it.`); render();
 }));
 document.addEventListener("keydown", e => {
@@ -1636,6 +2091,28 @@ function makeFloatBar(cfg) {
   let open = false; try { open = localStorage.getItem(cfg.key + "-tray") === "1"; } catch (e) {}
   const setOpen = v => { open = v; tray.hidden = !v; more.setAttribute("aria-expanded", v ? "true" : "false"); try { localStorage.setItem(cfg.key + "-tray", v ? "1" : "0"); } catch (e) {} };
   more.addEventListener("click", () => setOpen(!open)); row.append(more); setOpen(open);
+  /* optional mini terminal */
+  let setTerm = () => {};
+  if (cfg.terminal) {
+    const term = document.createElement("div"); term.className = "fb-term"; term.hidden = true;
+    term.innerHTML = '<div class="fb-term-h"><span>Terminal</span><span class="fb-term-q"></span></div><pre class="fb-term-s" aria-live="polite"></pre>';
+    bar.insertBefore(term, row);
+    const tb = document.createElement("button"); tb.type = "button"; tb.className = "fb-termbtn"; tb.innerHTML = 'Terminal<span class="dot" hidden></span>';
+    row.insertBefore(tb, more);
+    let tOpen = false, seen = "";
+    setTerm = v => { tOpen = v; term.hidden = !v; tb.setAttribute("aria-expanded", v ? "true" : "false"); if (v) tb.querySelector(".dot").hidden = true; };
+    tb.addEventListener("click", () => setTerm(!tOpen));
+    syncs.push(() => {
+      const scr = q(cfg.terminal.screen); if (!scr) return;
+      const txt = scr.textContent;
+      const lines = txt.split("\n"), last = lines.slice(-(cfg.terminal.lines || 5)).join("\n");
+      const pre = term.querySelector(".fb-term-s"); if (pre.dataset.v !== last) { pre.textContent = last; pre.dataset.v = last; }
+      const qn = cfg.terminal.queue ? cfg.terminal.queue() : ""; term.querySelector(".fb-term-q").textContent = qn;
+      if (txt !== seen) { if (!tOpen && seen !== "" && txt.length > seen.length) tb.querySelector(".dot").hidden = false; seen = txt; }
+      if (!txt) tb.querySelector(".dot").hidden = true;
+    });
+    setTerm(false);
+  }
   /* tray */
   (cfg.tray || []).forEach(it => {
     if (it.type === "btn") tray.append(mkBtn(it.proxy, it.label, it));
@@ -1653,14 +2130,15 @@ function makeFloatBar(cfg) {
   else bar.classList.add("on");
   const sync = () => { try { syncs.forEach(f => f()); } catch (e) {} };
   sync(); setInterval(sync, 200);
-  return bar;
+  return { bar, setTerm };
 }
 
 {
   const chip = document.createElement("span"); chip.className = "fb-chip"; chip.innerHTML = '<span class="fb-l">Tracing</span><span class="nm"></span><button type="button" aria-label="Stop tracing this file">×</button>';
   chip.querySelector("button").addEventListener("click", () => { sel = null; render(); });
   const scn = (...ks) => () => ks.includes(scenarioKey) || (W && W.crashed && ks.includes("crash"));
-  makeFloatBar({ key: "filelab", anchor: "header + .controls",
+  window.__fbar = makeFloatBar({ key: "filelab", anchor: "header + .controls",
+    terminal: { screen: "#screen", lines: 5, queue: () => W ? `output queue ${W.disp.outQ.length}/${OUTCAP}${W.disp.writers.length ? " · writer blocked" : ""} · ${W.st.wcalls} write() call${W.st.wcalls === 1 ? "" : "s"}` : "" },
     tray: [
       { type: "sel", proxy: "#view", label: "Show", maxw: "230px" },
       { type: "sel", proxy: "#prog", label: "Add process", maxw: "260px" },
@@ -1671,8 +2149,9 @@ function makeFloatBar(cfg) {
       { type: "btn", proxy: "#btnCrash", label: "Crash now", cls: "danger", showIf: scn("crash", "empty") },
       { type: "btn", proxy: "#btnRecover", label: "Recover", showIf: () => scn("crash", "empty")() || (W && W.crashed) },
       { type: "sel", proxy: "#dpol", label: "Disk scheduling", optLabel: true },
+      { type: "sel", proxy: "#stdout", label: "stdout goes to (on Reset)", maxw: "230px" },
     ],
-    jumps: [["Machine", "Machine view"], ["Disk", "Disk"], ["Tables", "File allocation table"], ["Inodes", "Directory tree"], ["Log", "What just happened"]] });
+    jumps: [["Machine", "Machine view"], ["Display", "Display"], ["Disk", "Disk"], ["Tables", "File allocation table"], ["Inodes", "Directory tree"], ["Log", "What just happened"]] });
 }
 
 const saved = store.get("filelab-scn");
